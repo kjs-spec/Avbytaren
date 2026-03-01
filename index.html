@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Match Manager Pro</title>
+
+<style>
+:root{
+  --bg1:#0f2027;
+  --bg2:#203a43;
+  --bg3:#2c5364;
+  --card:rgba(255,255,255,0.06);
+  --green:#00ff9d;
+  --red:#ff4d4d;
+  --gray:#bbbbbb;
+}
+
+body{
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+  background:linear-gradient(160deg,var(--bg1),var(--bg2),var(--bg3));
+  color:white;
+  text-align:center;
+}
+
+.container{ padding:20px; }
+
+h1{
+  font-weight:600;
+  letter-spacing:1px;
+  margin-bottom:20px;
+}
+
+.label{
+  text-align:left;
+  width:85%;
+  margin:15px auto 5px auto;
+  font-size:14px;
+  color:var(--gray);
+}
+
+input{
+  width:85%;
+  padding:14px;
+  margin-bottom:10px;
+  border-radius:14px;
+  border:none;
+  background:rgba(255,255,255,0.1);
+  color:white;
+  font-size:16px;
+}
+
+button{
+  border:none;
+  border-radius:18px;
+  padding:16px;
+  font-weight:600;
+  letter-spacing:1px;
+}
+
+.primary{
+  background:linear-gradient(90deg,var(--green),#00c97c);
+  color:black;
+  width:90%;
+}
+
+.big-btn{
+  font-size:30px;
+  padding:30px;
+  margin:25px 0;
+  width:90%;
+  box-shadow:0 10px 25px rgba(0,0,0,0.4);
+}
+
+.danger{
+  background:var(--red);
+  color:white;
+  width:70%;
+}
+
+.card{
+  background:var(--card);
+  backdrop-filter:blur(12px);
+  padding:20px;
+  border-radius:22px;
+  margin:20px 0;
+  box-shadow:0 8px 25px rgba(0,0,0,0.3);
+}
+
+.player{
+  padding:10px;
+  margin:6px;
+  border-radius:12px;
+  background:rgba(255,255,255,0.08);
+}
+
+.selected{
+  background:var(--green);
+  color:black;
+}
+
+.timer{
+  font-size:48px;
+  font-weight:700;
+}
+
+.signal{
+  font-size:18px;
+  color:var(--gray);
+  margin-top:5px;
+}
+
+.alert{
+  color:var(--red);
+}
+
+.green{ color:var(--green); }
+.red{ color:var(--red); }
+
+.hidden{ display:none; }
+
+.blink{
+  animation:blink 0.6s ease-in-out 4;
+}
+
+@keyframes blink{
+  50%{opacity:0.2;}
+}
+</style>
+</head>
+
+<body>
+
+<div class="container" id="setup">
+<h1>Matchinställningar</h1>
+
+<div class="label">Antal spelare på plan</div>
+<input type="number" id="onFieldCount" placeholder="Exempel: 6">
+
+<div class="label">Signal för byte (minuter)</div>
+<input type="number" id="intervalMin" placeholder="Exempel: 3" value="3">
+
+<div class="label">Lägg till spelare</div>
+<input type="text" id="nameInput" placeholder="Skriv namn och tryck Lägg till">
+<button class="primary" onclick="addPlayer()">Lägg till spelare</button>
+
+<div id="playerList"></div>
+
+<button class="primary big-btn" onclick="startMatch()">STARTA MATCH</button>
+</div>
+
+<div class="container hidden" id="match">
+
+<div class="timer" id="matchTime">00:00</div>
+<div class="signal" id="signalTime">Signal om 00:00</div>
+
+<button class="primary big-btn" onclick="makeSub()">BYTE</button>
+
+<div class="card">
+<h3>Nästa byte</h3>
+<div id="nextSub"></div>
+</div>
+
+<button class="danger" onclick="endMatch()">AVBRYT MATCH</button>
+
+</div>
+
+<div class="container hidden" id="summary">
+<h1>Matchsammanfattning</h1>
+<div id="summaryList"></div>
+<button class="primary big-btn" onclick="resetApp()">NY MATCH</button>
+</div>
+
+<script>
+let players=[], onField=[], bench=[];
+let totalSeconds=0, intervalSeconds=0, signalSeconds=0;
+let matchTimer=null, signalTimer=null;
+
+function addPlayer(){
+  const name=document.getElementById("nameInput").value.trim();
+  if(!name) return;
+  players.push({name:name,time:0,onField:false});
+  document.getElementById("nameInput").value="";
+  renderPlayers();
+}
+
+function renderPlayers(){
+  const list=document.getElementById("playerList");
+  list.innerHTML="";
+  players.forEach(p=>{
+    const div=document.createElement("div");
+    div.className="player"+(p.onField?" selected":"");
+    div.innerText=p.name;
+    div.onclick=()=>{p.onField=!p.onField;renderPlayers();};
+    list.appendChild(div);
+  });
+}
+
+function startMatch(){
+  const count=parseInt(document.getElementById("onFieldCount").value);
+  const interval=parseFloat(document.getElementById("intervalMin").value);
+
+  onField=players.filter(p=>p.onField);
+  bench=players.filter(p=>!p.onField);
+
+  if(onField.length!==count){
+    alert("Markera exakt "+count+" spelare på plan.");
+    return;
+  }
+
+  intervalSeconds=Math.floor(interval*60);
+  signalSeconds=intervalSeconds;
+
+  document.getElementById("setup").classList.add("hidden");
+  document.getElementById("match").classList.remove("hidden");
+
+  matchTimer=setInterval(()=>{
+    totalSeconds++;
+    onField.forEach(p=>p.time++);
+    updateMatchTime();
+  },1000);
+
+  signalTimer=setInterval(()=>{
+    signalSeconds--;
+    if(signalSeconds<=0){
+      navigator.vibrate(600);
+      document.getElementById("signalTime").classList.add("alert","blink");
+      signalSeconds=intervalSeconds;
+    }
+    updateSignalTime();
+  },1000);
+
+  updateNextSub();
+}
+
+function updateMatchTime(){
+  const m=Math.floor(totalSeconds/60);
+  const s=totalSeconds%60;
+  document.getElementById("matchTime").innerText=
+  (m<10?"0":"")+m+":"+(s<10?"0":"")+s;
+}
+
+function updateSignalTime(){
+  const m=Math.floor(signalSeconds/60);
+  const s=signalSeconds%60;
+  document.getElementById("signalTime").innerText=
+  "Signal om "+(m<10?"0":"")+m+":"+(s<10?"0":"")+s;
+}
+
+function updateNextSub(){
+  if(bench.length===0)return;
+  const out=onField.reduce((a,b)=>a.time>b.time?a:b);
+  const inn=bench[0];
+  document.getElementById("nextSub").innerHTML=
+  "<div class='green'>"+inn.name+" IN</div>"+
+  "<div class='red'>"+out.name+" UT</div>";
+}
+
+function makeSub(){
+  if(bench.length===0)return;
+
+  const out=onField.reduce((a,b)=>a.time>b.time?a:b);
+  const inn=bench[0];
+
+  out.onField=false;
+  inn.onField=true;
+
+  bench=bench.filter(p=>p!==inn);
+  bench.push(out);
+
+  onField=onField.filter(p=>p!==out);
+  onField.push(inn);
+
+  signalSeconds=intervalSeconds;
+  document.getElementById("signalTime").classList.remove("alert");
+  updateNextSub();
+}
+
+function endMatch(){
+  clearInterval(matchTimer);
+  clearInterval(signalTimer);
+  matchTimer=null;
+  signalTimer=null;
+
+  document.getElementById("match").classList.add("hidden");
+  document.getElementById("summary").classList.remove("hidden");
+
+  const list=document.getElementById("summaryList");
+  list.innerHTML="";
+
+  players.forEach(p=>{
+    const m=Math.floor(p.time/60);
+    const s=p.time%60;
+    const div=document.createElement("div");
+    div.className="card";
+    div.innerHTML="<strong>"+p.name+"</strong><br>"+
+    (m<10?"0":"")+m+":"+(s<10?"0":"")+s;
+    list.appendChild(div);
+  });
+}
+
+function resetApp(){
+  players=[];
+  onField=[];
+  bench=[];
+  totalSeconds=0;
+  intervalSeconds=0;
+  signalSeconds=0;
+
+  clearInterval(matchTimer);
+  clearInterval(signalTimer);
+  matchTimer=null;
+  signalTimer=null;
+
+  document.getElementById("summary").classList.add("hidden");
+  document.getElementById("match").classList.add("hidden");
+  document.getElementById("setup").classList.remove("hidden");
+
+  document.getElementById("playerList").innerHTML="";
+  document.getElementById("nameInput").value="";
+  document.getElementById("onFieldCount").value="";
+  document.getElementById("intervalMin").value="3";
+  document.getElementById("matchTime").innerText="00:00";
+  document.getElementById("signalTime").innerText="Signal om 00:00";
+  document.getElementById("summaryList").innerHTML="";
+}
+</script>
+
+</body>
+</html>
