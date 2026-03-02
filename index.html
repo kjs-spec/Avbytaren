@@ -2,26 +2,22 @@
 <html lang="sv">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f2027">
+
 <title>Avbytaren Pro</title>
 
 <style>
-:root{
---bg1:#0f2027;
---bg2:#203a43;
---bg3:#2c5364;
---green:#00ff9d;
---red:#ff4d4d;
---glass:rgba(255,255,255,0.06);
-}
-
-body{
+html, body {
+touch-action: manipulation;
+-webkit-user-select: none;
+user-select: none;
 margin:0;
 font-family:-apple-system,BlinkMacSystemFont,sans-serif;
-background:linear-gradient(160deg,var(--bg1),var(--bg2),var(--bg3));
+background:linear-gradient(160deg,#0f2027,#203a43,#2c5364);
 color:white;
 text-align:center;
 }
@@ -34,7 +30,7 @@ padding:12px;
 border-radius:12px;
 border:none;
 margin:6px;
-background:var(--glass);
+background:rgba(255,255,255,0.06);
 color:white;
 width:85%;
 }
@@ -48,12 +44,12 @@ font-weight:600;
 }
 
 .primary{
-background:linear-gradient(90deg,var(--green),#00c97c);
+background:linear-gradient(90deg,#00ff9d,#00c97c);
 color:black;
 }
 
 .danger{
-background:var(--red);
+background:#ff4d4d;
 color:white;
 }
 
@@ -63,9 +59,8 @@ padding:24px;
 width:90%;
 }
 
-.manual-mode{
-background:linear-gradient(90deg,#ff0000,#ff4d4d)!important;
-color:white!important;
+.alert-glow{
+box-shadow:0 0 25px rgba(255,0,0,0.8);
 }
 
 .list{list-style:none;padding:0;}
@@ -74,11 +69,11 @@ color:white!important;
 padding:12px;
 margin:6px 0;
 border-radius:12px;
-background:var(--glass);
+background:rgba(255,255,255,0.06);
 }
 
-.selected-bench{border:2px solid var(--red);}
-.selected-field{border:2px solid var(--green);}
+.selected-bench{border:2px solid #ff4d4d;}
+.selected-field{border:2px solid #00ff9d;}
 
 .timer{
 font-size:52px;
@@ -87,8 +82,13 @@ margin:10px;
 }
 
 .next-highlight{
-font-size:32px;
+font-size:30px;
 font-weight:800;
+}
+
+.swap-big{
+font-size:34px;
+font-weight:900;
 }
 
 .modal{
@@ -125,6 +125,7 @@ max-width:350px;
 <ul id="playerList" class="list"></ul>
 
 <input type="number" id="onFieldCount" placeholder="Antal på plan">
+<input type="number" id="subInterval" placeholder="Minuter mellan byten">
 
 <button class="primary big-btn" onclick="startMatch()">STARTA MATCH</button>
 
@@ -133,6 +134,7 @@ max-width:350px;
 <div class="container hidden" id="match">
 
 <div class="timer" id="matchTime">00:00</div>
+<div id="subCountdown" class="timer">Nästa byte: --:--</div>
 
 <button id="subButton" class="primary big-btn" onclick="makeSub()">BYTE</button>
 <button class="danger" onclick="openModal()">Avbryt</button>
@@ -174,6 +176,8 @@ let benchQueue=[];
 let selectedBench=null;
 let selectedField=null;
 let totalSeconds=0;
+let subSeconds=0;
+let subIntervalSeconds=0;
 let matchTimer=null;
 
 function addPlayer(){
@@ -194,7 +198,7 @@ li.className="player-item";
 li.innerText=p.name;
 li.onclick=()=>{
 p.onField=!p.onField;
-li.style.background=p.onField?"#00ff9d":"var(--glass)";
+li.style.background=p.onField?"#00ff9d":"rgba(255,255,255,0.06)";
 li.style.color=p.onField?"black":"white";
 };
 list.appendChild(li);
@@ -203,6 +207,13 @@ list.appendChild(li);
 
 function startMatch(){
 const count=parseInt(document.getElementById("onFieldCount").value);
+const interval=parseFloat(document.getElementById("subInterval").value);
+
+if(!interval || interval<=0){
+alert("Ange minuter mellan byten.");
+return;
+}
+
 const starters=players.filter(p=>p.onField);
 const bench=players.filter(p=>!p.onField);
 
@@ -213,6 +224,8 @@ return;
 
 fieldQueue=[...starters];
 benchQueue=[...bench];
+subIntervalSeconds = Math.round(interval*60);
+subSeconds = subIntervalSeconds;
 
 document.getElementById("setup").classList.add("hidden");
 document.getElementById("match").classList.remove("hidden");
@@ -221,9 +234,32 @@ matchTimer=setInterval(()=>{
 totalSeconds++;
 fieldQueue.forEach(p=>p.time++);
 document.getElementById("matchTime").innerText=formatTime(totalSeconds);
+
+subSeconds--;
+updateSubTimer();
+
+if(subSeconds<=0){
+notifySub();
+}
+
 },1000);
 
 updateLists();
+updateSubTimer();
+}
+
+function updateSubTimer(){
+if(subSeconds<0) subSeconds=0;
+document.getElementById("subCountdown").innerText=
+"Nästa byte: "+formatTime(subSeconds);
+}
+
+function notifySub(){
+document.getElementById("subButton").classList.add("alert-glow");
+document.getElementById("subCountdown").innerText="DAGS FÖR BYTE!";
+if(navigator.vibrate){
+navigator.vibrate([200,100,200]);
+}
 }
 
 function formatTime(sec){
@@ -274,18 +310,11 @@ const li=document.createElement("li");
 li.innerText=p.name;
 nextIn.appendChild(li);
 });
-
-const btn=document.getElementById("subButton");
-if(selectedBench&&selectedField){
-btn.innerText="MANUELLT BYTE";
-btn.classList.add("manual-mode");
-} else {
-btn.innerText="BYTE";
-btn.classList.remove("manual-mode");
-}
 }
 
 function makeSub(){
+document.getElementById("subButton").classList.remove("alert-glow");
+
 if(selectedBench && selectedField){
 benchQueue=benchQueue.filter(p=>p!==selectedBench);
 fieldQueue=fieldQueue.filter(p=>p!==selectedField);
@@ -300,6 +329,9 @@ const inn=benchQueue.shift();
 benchQueue.push(out);
 fieldQueue.push(inn);
 }
+
+subSeconds=subIntervalSeconds;
+updateSubTimer();
 updateLists();
 }
 
@@ -315,6 +347,16 @@ function confirmEnd(){
 clearInterval(matchTimer);
 location.reload();
 }
+
+/* Blockera dubbel-tryck zoom */
+let lastTouchEnd = 0;
+document.addEventListener('touchend', function (event) {
+const now = Date.now();
+if (now - lastTouchEnd <= 300) {
+event.preventDefault();
+}
+lastTouchEnd = now;
+}, false);
 
 </script>
 </body>
