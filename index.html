@@ -1,331 +1,707 @@
 <!DOCTYPE html>
+
 <html lang="sv">
+
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Match Manager Pro</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Avbytaren Pro</title>
+
+
 
 <style>
+
 :root{
+
   --bg1:#0f2027;
+
   --bg2:#203a43;
+
   --bg3:#2c5364;
-  --card:rgba(255,255,255,0.06);
+
   --green:#00ff9d;
+
   --red:#ff4d4d;
-  --gray:#bbbbbb;
+
+  --glass:rgba(255,255,255,0.06);
+
 }
+
+
 
 body{
+
   margin:0;
+
   font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+
   background:linear-gradient(160deg,var(--bg1),var(--bg2),var(--bg3));
+
   color:white;
+
   text-align:center;
+
 }
 
-.container{ padding:20px; }
 
-h1{
-  font-weight:600;
-  letter-spacing:1px;
-  margin-bottom:20px;
-}
 
-.label{
-  text-align:left;
-  width:85%;
-  margin:15px auto 5px auto;
-  font-size:14px;
-  color:var(--gray);
-}
+.container{padding:20px;}
 
-input{
-  width:85%;
-  padding:14px;
-  margin-bottom:10px;
-  border-radius:14px;
+.hidden{display:none;}
+
+
+
+h2{margin-top:0;}
+
+
+
+input,select{
+
+  padding:12px;
+
+  border-radius:12px;
+
   border:none;
-  background:rgba(255,255,255,0.1);
+
+  margin:6px;
+
+  background:var(--glass);
+
   color:white;
-  font-size:16px;
+
+  width:85%;
+
 }
+
+
 
 button{
+
+  padding:14px 18px;
+
+  border-radius:14px;
+
   border:none;
-  border-radius:18px;
-  padding:16px;
+
+  margin:6px;
+
   font-weight:600;
-  letter-spacing:1px;
+
 }
+
+
 
 .primary{
+
   background:linear-gradient(90deg,var(--green),#00c97c);
+
   color:black;
-  width:90%;
+
 }
 
-.big-btn{
-  font-size:30px;
-  padding:30px;
-  margin:25px 0;
-  width:90%;
-  box-shadow:0 10px 25px rgba(0,0,0,0.4);
-}
+
 
 .danger{
+
   background:var(--red);
+
   color:white;
-  width:70%;
+
 }
 
-.card{
-  background:var(--card);
-  backdrop-filter:blur(12px);
-  padding:20px;
-  border-radius:22px;
-  margin:20px 0;
-  box-shadow:0 8px 25px rgba(0,0,0,0.3);
+
+
+.big-btn{
+
+  font-size:24px;
+
+  padding:22px;
+
+  width:90%;
+
 }
 
-.player{
-  padding:10px;
-  margin:6px;
+
+
+.manual-mode{
+
+  background:linear-gradient(90deg,#ff0000,#ff4d4d)!important;
+
+  color:white!important;
+
+  box-shadow:0 0 20px rgba(255,0,0,0.7);
+
+}
+
+
+
+.list{list-style:none;padding:0;}
+
+
+
+.player-item{
+
+  padding:12px;
+
+  margin:6px 0;
+
   border-radius:12px;
-  background:rgba(255,255,255,0.08);
+
+  background:var(--glass);
+
+  transition:0.2s;
+
 }
 
-.selected{
-  background:var(--green);
-  color:black;
+
+
+.selected-bench{
+
+  border:2px solid var(--red);
+
+  box-shadow:0 0 12px rgba(255,77,77,0.7);
+
 }
+
+
+
+.selected-field{
+
+  border:2px solid var(--green);
+
+  box-shadow:0 0 12px rgba(0,255,157,0.7);
+
+}
+
+
 
 .timer{
+
   font-size:48px;
-  font-weight:700;
+
+  font-weight:800;
+
+  margin:10px;
+
 }
 
-.signal{
-  font-size:18px;
-  color:var(--gray);
-  margin-top:5px;
+
+
+.modal{
+
+ position:fixed;
+
+ inset:0;
+
+ background:rgba(0,0,0,0.6);
+
+ display:flex;
+
+ align-items:center;
+
+ justify-content:center;
+
 }
 
-.alert{
-  color:var(--red);
+
+
+.modal-box{
+
+ background:#1e2d36;
+
+ padding:25px;
+
+ border-radius:18px;
+
+ width:80%;
+
+ max-width:350px;
+
 }
 
-.green{ color:var(--green); }
-.red{ color:var(--red); }
-
-.hidden{ display:none; }
-
-.blink{
-  animation:blink 0.6s ease-in-out 4;
-}
-
-@keyframes blink{
-  50%{opacity:0.2;}
-}
 </style>
+
 </head>
 
 <body>
 
+
+
 <div class="container" id="setup">
-<h1>Matchinställningar</h1>
 
-<div class="label">Antal spelare på plan</div>
-<input type="number" id="onFieldCount" placeholder="Exempel: 6">
 
-<div class="label">Signal för byte (minuter)</div>
-<input type="number" id="intervalMin" placeholder="Exempel: 3" value="3">
 
-<div class="label">Lägg till spelare</div>
-<input type="text" id="nameInput" placeholder="Skriv namn och tryck Lägg till">
-<button class="primary" onclick="addPlayer()">Lägg till spelare</button>
+<h2>Lag</h2>
 
-<div id="playerList"></div>
+
+
+<select id="teamSelect"></select>
+
+<br>
+
+<button onclick="loadTeam()">Ladda lag</button>
+
+<button onclick="saveTeam()">Spara lag</button>
+
+<button onclick="chooseToday()">Välj vilka är med idag</button>
+
+
+
+<div id="todaySelect" class="hidden">
+
+  <h3>Vilka är med idag?</h3>
+
+  <ul id="todayList" class="list"></ul>
+
+  <button class="primary" onclick="confirmToday()">Fortsätt</button>
+
+</div>
+
+
+
+<hr>
+
+
+
+<h2>Matchinställningar</h2>
+
+
+
+<ul id="playerList" class="list"></ul>
+
+
+
+<input type="number" id="onFieldCount" placeholder="Antal på plan">
+
+
 
 <button class="primary big-btn" onclick="startMatch()">STARTA MATCH</button>
+
+
+
 </div>
+
+
 
 <div class="container hidden" id="match">
 
+
+
 <div class="timer" id="matchTime">00:00</div>
-<div class="signal" id="signalTime">Signal om 00:00</div>
 
-<button class="primary big-btn" onclick="makeSub()">BYTE</button>
 
-<div class="card">
-<h3>Nästa byte</h3>
-<div id="nextSub"></div>
+
+<button id="subButton" class="primary big-btn" onclick="makeSub()">BYTE</button>
+
+
+
+<button class="danger" onclick="openModal()">Avbryt</button>
+
+
+
+<div style="display:flex;justify-content:space-between;margin-top:20px;">
+
+<div style="width:45%;">
+
+<h3>Avbytare</h3>
+
+<ul id="benchList" class="list"></ul>
+
 </div>
 
-<button class="danger" onclick="endMatch()">AVBRYT MATCH</button>
+<div style="width:45%;">
+
+<h3>På plan</h3>
+
+<ul id="fieldList" class="list"></ul>
 
 </div>
 
-<div class="container hidden" id="summary">
-<h1>Matchsammanfattning</h1>
-<div id="summaryList"></div>
-<button class="primary big-btn" onclick="resetApp()">NY MATCH</button>
 </div>
+
+
+
+</div>
+
+
+
+<div id="confirmModal" class="modal hidden">
+
+<div class="modal-box">
+
+<h3>Avbryta match?</h3>
+
+<button onclick="closeModal()">Fortsätt</button>
+
+<button class="danger" onclick="confirmEnd()">Avbryt</button>
+
+</div>
+
+</div>
+
+
 
 <script>
-let players=[], onField=[], bench=[];
-let totalSeconds=0, intervalSeconds=0, signalSeconds=0;
-let matchTimer=null, signalTimer=null;
 
-function addPlayer(){
-  const name=document.getElementById("nameInput").value.trim();
-  if(!name) return;
-  players.push({name:name,time:0,onField:false});
-  document.getElementById("nameInput").value="";
-  renderPlayers();
+
+
+/* ===== STORAGE ===== */
+
+
+
+let teams = JSON.parse(localStorage.getItem("teams_pro")) || {};
+
+let players=[], onField=[], bench=[];
+
+let selectedBench=null, selectedField=null;
+
+let totalSeconds=0, matchTimer=null;
+
+
+
+/* ===== TEAM ===== */
+
+
+
+function refreshDropdown(){
+
+ const select=document.getElementById("teamSelect");
+
+ select.innerHTML="";
+
+ Object.keys(teams).forEach(name=>{
+
+   const option=document.createElement("option");
+
+   option.value=name;
+
+   option.innerText=name;
+
+   select.appendChild(option);
+
+ });
+
 }
+
+refreshDropdown();
+
+
+
+function saveTeam(){
+
+ const name=prompt("Lagnamn?");
+
+ if(!name)return;
+
+ teams[name]=players.map(p=>p.name);
+
+ localStorage.setItem("teams_pro",JSON.stringify(teams));
+
+ refreshDropdown();
+
+}
+
+
+
+function loadTeam(){
+
+ const name=document.getElementById("teamSelect").value;
+
+ if(!teams[name])return;
+
+ players=teams[name].map(n=>({name:n,time:0,onField:false}));
+
+ renderPlayers();
+
+}
+
+
+
+function chooseToday(){
+
+ const name=document.getElementById("teamSelect").value;
+
+ if(!teams[name])return;
+
+
+
+ const list=document.getElementById("todayList");
+
+ list.innerHTML="";
+
+
+
+ teams[name].forEach(player=>{
+
+   const li=document.createElement("li");
+
+   li.className="player-item";
+
+   li.innerHTML=`<label>
+
+     <input type="checkbox" value="${player}"> ${player}
+
+   </label>`;
+
+   list.appendChild(li);
+
+ });
+
+
+
+ document.getElementById("todaySelect").classList.remove("hidden");
+
+}
+
+
+
+function confirmToday(){
+
+ const checked=[...document.querySelectorAll("#todayList input:checked")];
+
+ players=checked.map(c=>({name:c.value,time:0,onField:false}));
+
+ renderPlayers();
+
+ document.getElementById("todaySelect").classList.add("hidden");
+
+}
+
+
+
+/* ===== PLAYERS ===== */
+
+
 
 function renderPlayers(){
-  const list=document.getElementById("playerList");
-  list.innerHTML="";
-  players.forEach(p=>{
-    const div=document.createElement("div");
-    div.className="player"+(p.onField?" selected":"");
-    div.innerText=p.name;
-    div.onclick=()=>{p.onField=!p.onField;renderPlayers();};
-    list.appendChild(div);
-  });
+
+ const list=document.getElementById("playerList");
+
+ list.innerHTML="";
+
+ players.forEach(p=>{
+
+   const li=document.createElement("li");
+
+   li.className="player-item";
+
+   li.innerText=p.name;
+
+   li.onclick=()=>{
+
+     p.onField=!p.onField;
+
+     li.style.background=p.onField?"#00ff9d":"var(--glass)";
+
+     li.style.color=p.onField?"black":"white";
+
+   };
+
+   list.appendChild(li);
+
+ });
+
 }
+
+
+
+/* ===== MATCH ===== */
+
+
 
 function startMatch(){
-  const count=parseInt(document.getElementById("onFieldCount").value);
-  const interval=parseFloat(document.getElementById("intervalMin").value);
 
-  onField=players.filter(p=>p.onField);
-  bench=players.filter(p=>!p.onField);
+ const count=parseInt(document.getElementById("onFieldCount").value);
 
-  if(onField.length!==count){
-    alert("Markera exakt "+count+" spelare på plan.");
-    return;
-  }
+ onField=players.filter(p=>p.onField);
 
-  intervalSeconds=Math.floor(interval*60);
-  signalSeconds=intervalSeconds;
+ bench=players.filter(p=>!p.onField);
 
-  document.getElementById("setup").classList.add("hidden");
-  document.getElementById("match").classList.remove("hidden");
 
-  matchTimer=setInterval(()=>{
-    totalSeconds++;
-    onField.forEach(p=>p.time++);
-    updateMatchTime();
-  },1000);
 
-  signalTimer=setInterval(()=>{
-    signalSeconds--;
-    if(signalSeconds<=0){
-      navigator.vibrate(600);
-      document.getElementById("signalTime").classList.add("alert","blink");
-      signalSeconds=intervalSeconds;
-    }
-    updateSignalTime();
-  },1000);
+ if(onField.length!==count){
 
-  updateNextSub();
+   alert("Markera exakt "+count+" spelare.");
+
+   return;
+
+ }
+
+
+
+ document.getElementById("setup").classList.add("hidden");
+
+ document.getElementById("match").classList.remove("hidden");
+
+
+
+ matchTimer=setInterval(()=>{
+
+   totalSeconds++;
+
+   onField.forEach(p=>p.time++);
+
+   document.getElementById("matchTime").innerText=formatTime(totalSeconds);
+
+   updateLists();
+
+ },1000);
+
+
+
+ updateLists();
+
 }
 
-function updateMatchTime(){
-  const m=Math.floor(totalSeconds/60);
-  const s=totalSeconds%60;
-  document.getElementById("matchTime").innerText=
-  (m<10?"0":"")+m+":"+(s<10?"0":"")+s;
+
+
+function formatTime(sec){
+
+ const m=Math.floor(sec/60);
+
+ const s=sec%60;
+
+ return (m<10?"0":"")+m+":"+(s<10?"0":"")+s;
+
 }
 
-function updateSignalTime(){
-  const m=Math.floor(signalSeconds/60);
-  const s=signalSeconds%60;
-  document.getElementById("signalTime").innerText=
-  "Signal om "+(m<10?"0":"")+m+":"+(s<10?"0":"")+s;
+
+
+function updateLists(){
+
+ const benchList=document.getElementById("benchList");
+
+ const fieldList=document.getElementById("fieldList");
+
+
+
+ benchList.innerHTML="";
+
+ fieldList.innerHTML="";
+
+
+
+ bench.forEach(p=>{
+
+   const li=document.createElement("li");
+
+   li.className="player-item";
+
+   li.innerText=p.name;
+
+   if(selectedBench===p)li.classList.add("selected-bench");
+
+   li.onclick=()=>{selectedBench=selectedBench===p?null:p;updateLists();}
+
+   benchList.appendChild(li);
+
+ });
+
+
+
+ onField.sort((a,b)=>b.time-a.time).forEach(p=>{
+
+   const li=document.createElement("li");
+
+   li.className="player-item";
+
+   li.innerText=p.name;
+
+   if(selectedField===p)li.classList.add("selected-field");
+
+   li.onclick=()=>{selectedField=selectedField===p?null:p;updateLists();}
+
+   fieldList.appendChild(li);
+
+ });
+
+
+
+ const btn=document.getElementById("subButton");
+
+ if(selectedBench&&selectedField){
+
+   btn.innerText="MANUELLT BYTE";
+
+   btn.classList.add("manual-mode");
+
+ } else {
+
+   btn.innerText="BYTE";
+
+   btn.classList.remove("manual-mode");
+
+ }
+
 }
 
-function updateNextSub(){
-  if(bench.length===0)return;
-  const out=onField.reduce((a,b)=>a.time>b.time?a:b);
-  const inn=bench[0];
-  document.getElementById("nextSub").innerHTML=
-  "<div class='green'>"+inn.name+" IN</div>"+
-  "<div class='red'>"+out.name+" UT</div>";
-}
+
 
 function makeSub(){
-  if(bench.length===0)return;
 
-  const out=onField.reduce((a,b)=>a.time>b.time?a:b);
-  const inn=bench[0];
+ if(selectedBench&&selectedField){
 
-  out.onField=false;
-  inn.onField=true;
+   bench=bench.filter(p=>p!==selectedBench);
 
-  bench=bench.filter(p=>p!==inn);
-  bench.push(out);
+   bench.push(selectedField);
 
-  onField=onField.filter(p=>p!==out);
-  onField.push(inn);
+   onField=onField.filter(p=>p!==selectedField);
 
-  signalSeconds=intervalSeconds;
-  document.getElementById("signalTime").classList.remove("alert");
-  updateNextSub();
+   onField.push(selectedBench);
+
+   selectedBench=null;
+
+   selectedField=null;
+
+ } else {
+
+   if(bench.length===0)return;
+
+   const out=onField[0];
+
+   const inn=bench.shift();
+
+   bench.push(out);
+
+   onField.shift();
+
+   onField.push(inn);
+
+ }
+
+ updateLists();
+
 }
 
-function endMatch(){
-  clearInterval(matchTimer);
-  clearInterval(signalTimer);
-  matchTimer=null;
-  signalTimer=null;
 
-  document.getElementById("match").classList.add("hidden");
-  document.getElementById("summary").classList.remove("hidden");
 
-  const list=document.getElementById("summaryList");
-  list.innerHTML="";
+/* ===== MODAL ===== */
 
-  players.forEach(p=>{
-    const m=Math.floor(p.time/60);
-    const s=p.time%60;
-    const div=document.createElement("div");
-    div.className="card";
-    div.innerHTML="<strong>"+p.name+"</strong><br>"+
-    (m<10?"0":"")+m+":"+(s<10?"0":"")+s;
-    list.appendChild(div);
-  });
+
+
+function openModal(){
+
+ document.getElementById("confirmModal").classList.remove("hidden");
+
 }
 
-function resetApp(){
-  players=[];
-  onField=[];
-  bench=[];
-  totalSeconds=0;
-  intervalSeconds=0;
-  signalSeconds=0;
+function closeModal(){
 
-  clearInterval(matchTimer);
-  clearInterval(signalTimer);
-  matchTimer=null;
-  signalTimer=null;
+ document.getElementById("confirmModal").classList.add("hidden");
 
-  document.getElementById("summary").classList.add("hidden");
-  document.getElementById("match").classList.add("hidden");
-  document.getElementById("setup").classList.remove("hidden");
-
-  document.getElementById("playerList").innerHTML="";
-  document.getElementById("nameInput").value="";
-  document.getElementById("onFieldCount").value="";
-  document.getElementById("intervalMin").value="3";
-  document.getElementById("matchTime").innerText="00:00";
-  document.getElementById("signalTime").innerText="Signal om 00:00";
-  document.getElementById("summaryList").innerHTML="";
 }
+
+function confirmEnd(){
+
+ clearInterval(matchTimer);
+
+ location.reload();
+
+}
+
+
+
 </script>
-
-</body>
-</html>
