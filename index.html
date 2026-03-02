@@ -49,14 +49,11 @@ font-size:44px;
 font-weight:900;
 letter-spacing:4px;
 text-transform:uppercase;
-
 background:linear-gradient(90deg,#00ff9d,#00c97c,#00ff9d);
 background-size:200% auto;
 -webkit-background-clip:text;
 -webkit-text-fill-color:transparent;
-
 text-shadow:0 0 25px rgba(0,255,157,0.3);
-
 animation: shimmer 4s linear infinite;
 }
 
@@ -82,7 +79,6 @@ border-radius:2px;
 opacity:0.6;
 }
 
-/* INPUT & BUTTON */
 input{
 padding:12px;
 border-radius:12px;
@@ -131,13 +127,13 @@ background:rgba(255,255,255,0.08);
 }
 
 .swap-name{
-font-size:34px;
+font-size:36px;
 font-weight:900;
 margin:8px 0;
 }
 
-.out{color:#ff4d4d;}
-.in{color:#00ff9d;}
+.out{color:#ff4d4d;} /* UT = röd */
+.in{color:#00ff9d;} /* IN = grön */
 
 .list{
 list-style:none;
@@ -217,11 +213,11 @@ max-width:350px;
 
 <div style="display:flex;justify-content:space-between;">
 <div style="width:48%;">
-<h3 class="out">På plan</h3>
+<h3 style="color:#00ff9d;">På plan</h3>
 <ul id="fieldList" class="list"></ul>
 </div>
 <div style="width:48%;">
-<h3 class="in">Avbytare</h3>
+<h3 style="color:#ff4d4d;">Avbytare</h3>
 <ul id="benchList" class="list"></ul>
 </div>
 </div>
@@ -245,8 +241,8 @@ max-width:350px;
 <p><b>4.</b> Ange minuter mellan byten.</p>
 <p><b>5.</b> Starta match.</p>
 <hr>
-<p>🔴 Röd = På plan</p>
-<p>🟢 Grön = Avbytare</p>
+<p>🟢 Grön = På plan</p>
+<p>🔴 Röd = Avbytare</p>
 <p>Klicka namn för manuellt byte.</p>
 <button class="primary" onclick="closeInfo()">Stäng</button>
 </div>
@@ -343,7 +339,7 @@ fieldQueue.forEach(p=>{
 const li=document.createElement("li");
 li.className="player-item";
 li.innerText=p.name;
-li.style.color="#ff4d4d";
+li.style.color="#00ff9d"; /* PÅ PLAN = GRÖN */
 if(p===manualOut) li.classList.add("selected");
 li.onclick=()=>{manualOut=p===manualOut?null:p;updateSwapBox();updateLists();};
 fieldList.appendChild(li);
@@ -352,7 +348,7 @@ benchQueue.forEach(p=>{
 const li=document.createElement("li");
 li.className="player-item";
 li.innerText=p.name;
-li.style.color="#00ff9d";
+li.style.color="#ff4d4d"; /* BÄNK = RÖD */
 if(p===manualIn) li.classList.add("selected");
 li.onclick=()=>{manualIn=p===manualIn?null:p;updateSwapBox();updateLists();};
 benchList.appendChild(li);
