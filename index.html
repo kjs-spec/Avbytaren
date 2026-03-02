@@ -34,14 +34,9 @@ box-sizing:border-box;
 
 .hidden{display:none;}
 
-.app-header{
-margin-top:10px;
-margin-bottom:35px;
-}
-
 .app-header h1{
 margin:0;
-font-size:40px;
+font-size:38px;
 font-weight:900;
 letter-spacing:4px;
 text-transform:uppercase;
@@ -49,7 +44,6 @@ background:linear-gradient(90deg,#00ff9d,#00c97c,#00ff9d);
 background-size:200% auto;
 -webkit-background-clip:text;
 -webkit-text-fill-color:transparent;
-text-shadow:0 0 25px rgba(0,255,157,0.3);
 animation: shimmer 4s linear infinite;
 }
 
@@ -71,7 +65,7 @@ border-radius:50%;
 width:32px;
 height:32px;
 font-size:20px;
-padding:0;
+border:none;
 }
 
 input, select{
@@ -103,13 +97,13 @@ color:white;
 }
 
 .big-btn{
-font-size:24px;
+font-size:22px;
 padding:20px;
 width:90%;
 }
 
 .timer{
-font-size:44px;
+font-size:42px;
 font-weight:800;
 margin:10px;
 }
@@ -122,7 +116,7 @@ background:rgba(255,255,255,0.08);
 }
 
 .swap-name{
-font-size:32px;
+font-size:30px;
 font-weight:900;
 margin:8px 0;
 }
@@ -171,7 +165,6 @@ overflow:auto;
 </head>
 <body>
 
-<!-- SETUP -->
 <div class="container" id="setup">
 
 <div class="app-header">
@@ -194,7 +187,6 @@ overflow:auto;
 <button class="primary big-btn" onclick="startMatch()">STARTA MATCH</button>
 </div>
 
-<!-- MATCH -->
 <div class="container hidden" id="match">
 
 <div class="timer" id="matchTime">00:00</div>
@@ -223,7 +215,6 @@ overflow:auto;
 
 </div>
 
-<!-- STATISTIK -->
 <div class="container hidden" id="stats">
 <h2>Matchstatistik</h2>
 <ul id="statsList" class="list"></ul>
@@ -241,11 +232,36 @@ let matchTimer=null;
 let manualOut=null;
 let manualIn=null;
 
+/* SPELARE */
+
+function addPlayer(){
+const name=nameInput.value.trim();
+if(!name) return;
+players.push({name:name,time:0,onField:false});
+nameInput.value="";
+renderPlayers();
+}
+
+function renderPlayers(){
+playerList.innerHTML="";
+players.forEach(p=>{
+let li=document.createElement("li");
+li.className="player-item";
+li.innerText=p.name;
+li.onclick=()=>{
+p.onField=!p.onField;
+li.style.background=p.onField?"#00ff9d":"rgba(255,255,255,0.08)";
+li.style.color=p.onField?"black":"white";
+};
+playerList.appendChild(li);
+});
+}
+
 /* MATCH */
 
 function startMatch(){
-const count=parseInt(document.getElementById("onFieldCount").value);
-const interval=parseFloat(document.getElementById("subInterval").value);
+const count=parseInt(onFieldCount.value);
+const interval=parseFloat(subInterval.value);
 
 if(!interval||interval<=0){alert("Ange minuter mellan byten.");return;}
 
@@ -262,13 +278,13 @@ benchQueue=[...bench];
 subIntervalSeconds=Math.round(interval*60);
 subSeconds=subIntervalSeconds;
 
-document.getElementById("setup").classList.add("hidden");
-document.getElementById("match").classList.remove("hidden");
+setup.classList.add("hidden");
+match.classList.remove("hidden");
 
 matchTimer=setInterval(()=>{
 totalSeconds++;
 fieldQueue.forEach(p=>p.time++);
-document.getElementById("matchTime").innerText=formatTime(totalSeconds);
+matchTime.innerText=formatTime(totalSeconds);
 subSeconds--;
 updateSubTimer();
 if(subSeconds<=0) notifySub();
@@ -279,7 +295,7 @@ updateSwapBox();
 }
 
 function makeSub(){
-document.getElementById("subButton").style.boxShadow="none";
+subButton.style.boxShadow="none";
 let out=manualOut||fieldQueue[0];
 let inn=manualIn||benchQueue[0];
 if(!out||!inn)return;
@@ -299,8 +315,6 @@ updateSwapBox();
 }
 
 function updateLists(){
-let fieldList=document.getElementById("fieldList");
-let benchList=document.getElementById("benchList");
 fieldList.innerHTML="";
 benchList.innerHTML="";
 
@@ -328,17 +342,17 @@ benchList.appendChild(li);
 function updateSwapBox(){
 let out=manualOut||fieldQueue[0];
 let inn=manualIn||benchQueue[0];
-document.getElementById("nextOut").innerText="UT: "+(out?out.name:"-");
-document.getElementById("nextIn").innerText="IN: "+(inn?inn.name:"-");
+nextOut.innerText="UT: "+(out?out.name:"-");
+nextIn.innerText="IN: "+(inn?inn.name:"-");
 }
 
 function updateSubTimer(){
 if(subSeconds<0) subSeconds=0;
-document.getElementById("subTimer").innerText="Nästa byte: "+formatTime(subSeconds);
+subTimer.innerText="Nästa byte: "+formatTime(subSeconds);
 }
 
 function notifySub(){
-document.getElementById("subButton").style.boxShadow="0 0 25px red";
+subButton.style.boxShadow="0 0 25px red";
 if(navigator.vibrate) navigator.vibrate([200,100,200]);
 }
 
@@ -347,12 +361,10 @@ if(!confirm("Vill du verkligen avsluta matchen?")) return;
 
 clearInterval(matchTimer);
 
-document.getElementById("match").classList.add("hidden");
-document.getElementById("stats").classList.remove("hidden");
+match.classList.add("hidden");
+stats.classList.remove("hidden");
 
-let statsList=document.getElementById("statsList");
 statsList.innerHTML="";
-
 players.sort((a,b)=>b.time-a.time)
 .forEach(p=>{
 let li=document.createElement("li");
@@ -368,30 +380,6 @@ function formatTime(sec){
 const m=Math.floor(sec/60);
 const s=sec%60;
 return (m<10?"0":"")+m+":"+(s<10?"0":"")+s;
-}
-
-function addPlayer(){
-const name=document.getElementById("nameInput").value.trim();
-if(!name) return;
-players.push({name:name,time:0,onField:false});
-document.getElementById("nameInput").value="";
-renderPlayers();
-}
-
-function renderPlayers(){
-let list=document.getElementById("playerList");
-list.innerHTML="";
-players.forEach(p=>{
-let li=document.createElement("li");
-li.className="player-item";
-li.innerText=p.name;
-li.onclick=()=>{
-p.onField=!p.onField;
-li.style.background=p.onField?"#00ff9d":"rgba(255,255,255,0.08)";
-li.style.color=p.onField?"black":"white";
-};
-list.appendChild(li);
-});
 }
 </script>
 </body>
