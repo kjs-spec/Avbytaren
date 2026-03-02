@@ -1,750 +1,377 @@
 <!DOCTYPE html>
-
 <html lang="sv">
-
 <head>
-
 <meta charset="UTF-8">
-
 <meta name="viewport"
-
 content="width=device-width, initial-scale=1.0,
-
 maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-
 <meta name="apple-mobile-web-app-capable" content="yes">
-
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
 <meta name="theme-color" content="#0f2027">
-
 <title>Avbytaren</title>
 
-
-
 <style>
-
 html,body{
-
 margin:0;
-
 padding:0;
-
 min-height:100vh;
-
 font-family:-apple-system,BlinkMacSystemFont,sans-serif;
-
 background:linear-gradient(160deg,#0f2027,#203a43,#2c5364);
-
 color:white;
-
 text-align:center;
-
 touch-action:manipulation;
-
 -webkit-user-select:none;
-
 user-select:none;
-
 padding-top:env(safe-area-inset-top);
-
 padding-bottom:env(safe-area-inset-bottom);
-
 }
-
-
 
 .container{
-
 padding:30px 20px 20px 20px;
-
 min-height:100vh;
-
 box-sizing:border-box;
-
 }
-
-
 
 .hidden{display:none;}
 
-
-
 .app-header{
-
 margin-top:10px;
-
 margin-bottom:35px;
-
 }
-
-
 
 .app-header h1{
-
 margin:0;
-
 font-size:40px;
-
 font-weight:900;
-
 letter-spacing:4px;
-
 text-transform:uppercase;
-
 background:linear-gradient(90deg,#00ff9d,#00c97c,#00ff9d);
-
 background-size:200% auto;
-
 -webkit-background-clip:text;
-
 -webkit-text-fill-color:transparent;
-
 text-shadow:0 0 25px rgba(0,255,157,0.3);
-
 animation: shimmer 4s linear infinite;
-
 }
-
-
 
 @keyframes shimmer {
-
 to { background-position:200% center; }
-
 }
-
-
 
 .section-header{
-
 display:flex;
-
 justify-content:center;
-
 align-items:center;
-
 gap:10px;
-
 }
-
-
 
 .small-btn{
-
 background:#ffffff22;
-
 color:white;
-
 border-radius:50%;
-
 width:32px;
-
 height:32px;
-
 font-size:20px;
-
 padding:0;
-
 }
-
-
 
 input, select{
-
 padding:12px;
-
 border-radius:12px;
-
 border:none;
-
 margin:6px;
-
 background:rgba(255,255,255,0.08);
-
 color:white;
-
 width:85%;
-
 }
-
-
 
 button{
-
 padding:14px 18px;
-
 border-radius:14px;
-
 border:none;
-
 margin:8px;
-
 font-weight:700;
-
 }
-
-
 
 .primary{
-
 background:linear-gradient(90deg,#00ff9d,#00c97c);
-
 color:black;
-
 }
-
-
 
 .danger{
-
 background:#ff4d4d;
-
 color:white;
-
 }
-
-
 
 .big-btn{
-
 font-size:24px;
-
 padding:20px;
-
 width:90%;
-
 }
-
-
 
 .timer{
-
 font-size:44px;
-
 font-weight:800;
-
 margin:10px;
-
 }
-
-
 
 .swap-box{
-
 margin-top:20px;
-
 padding:18px;
-
 border-radius:18px;
-
 background:rgba(255,255,255,0.08);
-
 }
-
-
 
 .swap-name{
-
 font-size:32px;
-
 font-weight:900;
-
 margin:8px 0;
-
 }
-
-
 
 .out{color:#ff4d4d;}
-
 .in{color:#00ff9d;}
 
-
-
 .list{
-
 list-style:none;
-
 padding:0;
-
 }
-
-
 
 .player-item{
-
 padding:10px;
-
 margin:5px 0;
-
 border-radius:10px;
-
 background:rgba(255,255,255,0.08);
-
 cursor:pointer;
-
 }
-
-
 
 .selected{
-
 outline:3px solid yellow;
-
 }
-
-
 
 .modal{
-
 position:fixed;
-
 inset:0;
-
 background:rgba(0,0,0,0.6);
-
 display:none;
-
 align-items:center;
-
 justify-content:center;
-
 }
-
-
 
 .modal.active{display:flex;}
 
-
-
 .modal-box{
-
 background:#1e2d36;
-
 padding:25px;
-
 border-radius:18px;
-
 width:90%;
-
 max-width:400px;
-
 max-height:90vh;
-
 overflow:auto;
-
 }
-
 </style>
-
 </head>
-
 <body>
 
-
-
 <!-- SETUP -->
-
 <div class="container" id="setup">
 
-
-
 <div class="app-header">
-
 <h1>AVBYTAREN</h1>
-
 </div>
-
-
 
 <div class="section-header">
-
 <h3>Lägg till spelare</h3>
-
 <button class="small-btn" onclick="openTeamModal()">+</button>
-
 </div>
 
-
-
 <input type="text" id="nameInput" placeholder="Spelarnamn">
-
 <button class="primary" onclick="addPlayer()">Lägg till</button>
-
-
 
 <ul id="playerList" class="list"></ul>
 
-
-
 <input type="number" id="onFieldCount" placeholder="Antal på plan">
-
 <input type="number" id="subInterval" placeholder="Minuter mellan byten">
 
-
-
 <button class="primary big-btn" onclick="startMatch()">STARTA MATCH</button>
-
 </div>
-
-
 
 <!-- MATCH -->
-
 <div class="container hidden" id="match">
 
-
-
 <div class="timer" id="matchTime">00:00</div>
-
 <div class="timer" id="subTimer">Nästa byte: --:--</div>
 
-
-
 <div class="swap-box">
-
 <div class="swap-name out" id="nextOut">UT: -</div>
-
 <div class="swap-name in" id="nextIn">IN: -</div>
-
 </div>
-
-
 
 <button id="subButton" class="primary big-btn" onclick="makeSub()">GENOMFÖR BYTE</button>
-
 <button class="danger" onclick="endMatch()">Avbryt</button>
 
-
-
 <hr>
-
-
 
 <div style="display:flex;justify-content:space-between;">
-
 <div style="width:48%;">
-
 <h3 style="color:#00ff9d;">På plan</h3>
-
 <ul id="fieldList" class="list"></ul>
-
 </div>
-
 <div style="width:48%;">
-
 <h3 style="color:#ff4d4d;">Avbytare</h3>
-
 <ul id="benchList" class="list"></ul>
-
+</div>
 </div>
 
 </div>
-
-
-
-</div>
-
-
 
 <!-- STATISTIK -->
-
 <div class="container hidden" id="stats">
-
 <h2>Matchstatistik</h2>
-
 <ul id="statsList" class="list"></ul>
-
 <button class="primary big-btn" onclick="resetApp()">Ny match</button>
-
 </div>
 
-
-
 <!-- LAG MODAL -->
-
 <div id="teamModal" class="modal">
-
 <div class="modal-box">
-
 <h3>Hantera lag</h3>
 
-
-
 <select id="teamSelect" onchange="loadTeamForEdit()"></select>
-
 <button onclick="deleteTeam()" class="danger">Radera lag</button>
 
-
-
 <hr>
-
-
 
 <input type="text" id="teamNameInput" placeholder="Nytt lag-namn">
-
 <button onclick="createNewTeam()">Skapa nytt lag</button>
 
-
-
 <hr>
-
-
 
 <div id="teamPlayers"></div>
 
-
-
 <input type="text" id="newTeamPlayer" placeholder="Lägg till spelare i lag">
-
 <button onclick="addPlayerToTeam()">Lägg till</button>
-
-
 
 <hr>
 
-
-
 <button class="primary" onclick="saveTeam()">Spara lag</button>
-
 <button class="primary" onclick="importSelectedPlayers()">Importera till match</button>
-
 <button onclick="closeTeamModal()">Stäng</button>
 
-
-
 </div>
-
 </div>
-
-
 
 <script>
-
 let players=[];
-
 let fieldQueue=[];
-
 let benchQueue=[];
-
 let totalSeconds=0;
-
 let subSeconds=0;
-
 let subIntervalSeconds=0;
-
 let matchTimer=null;
-
 let manualOut=null;
-
 let manualIn=null;
 
-
-
 let teams=JSON.parse(localStorage.getItem("teams")||"{}");
-
 let currentTeam=null;
-
-
 
 /* ---------- MATCH ---------- */
 
-
-
 function startMatch(){
-
 const count=parseInt(document.getElementById("onFieldCount").value);
-
 const interval=parseFloat(document.getElementById("subInterval").value);
 
-
-
 if(!interval||interval<=0){alert("Ange minuter mellan byten.");return;}
-
 const starters=players.filter(p=>p.onField);
-
 const bench=players.filter(p=>!p.onField);
-
 if(starters.length!==count){alert("Markera exakt "+count+" spelare.");return;}
 
-
-
 fieldQueue=[...starters];
-
 benchQueue=[...bench];
-
 subIntervalSeconds=Math.round(interval*60);
-
 subSeconds=subIntervalSeconds;
-
-
 
 document.getElementById("setup").classList.add("hidden");
-
 document.getElementById("match").classList.remove("hidden");
 
-
-
 matchTimer=setInterval(()=>{
-
 totalSeconds++;
-
 fieldQueue.forEach(p=>p.time++);
-
 document.getElementById("matchTime").innerText=formatTime(totalSeconds);
-
 subSeconds--;
-
 updateSubTimer();
-
 if(subSeconds<=0) notifySub();
-
 },1000);
 
-
-
 updateLists();
-
 updateSwapBox();
-
 }
-
-
 
 function makeSub(){
-
 document.getElementById("subButton").style.boxShadow="none";
-
 let out=manualOut||fieldQueue[0];
-
 let inn=manualIn||benchQueue[0];
-
 if(!out||!inn)return;
-
 fieldQueue=fieldQueue.filter(p=>p!==out);
-
 benchQueue=benchQueue.filter(p=>p!==inn);
-
 benchQueue.push(out);
-
 fieldQueue.push(inn);
-
 manualOut=null;
-
 manualIn=null;
-
 subSeconds=subIntervalSeconds;
-
 updateSubTimer();
-
 updateLists();
-
 updateSwapBox();
-
 }
-
-
 
 function updateLists(){
-
 let fieldList=document.getElementById("fieldList");
-
 let benchList=document.getElementById("benchList");
-
 fieldList.innerHTML="";
-
 benchList.innerHTML="";
 
-
-
 fieldQueue.forEach(p=>{
-
 let li=document.createElement("li");
-
 li.className="player-item";
-
 li.innerText=p.name;
-
 li.style.color="#00ff9d";
-
 if(p===manualOut) li.classList.add("selected");
-
 li.onclick=()=>{manualOut=p===manualOut?null:p;updateSwapBox();updateLists();};
-
 fieldList.appendChild(li);
-
 });
-
-
 
 benchQueue.forEach(p=>{
-
 let li=document.createElement("li");
-
 li.className="player-item";
-
 li.innerText=p.name;
-
 li.style.color="#ff4d4d";
-
 if(p===manualIn) li.classList.add("selected");
-
 li.onclick=()=>{manualIn=p===manualIn?null:p;updateSwapBox();updateLists();};
-
 benchList.appendChild(li);
-
 });
-
 }
-
-
 
 function updateSwapBox(){
-
 let out=manualOut||fieldQueue[0];
-
 let inn=manualIn||benchQueue[0];
-
 document.getElementById("nextOut").innerText="UT: "+(out?out.name:"-");
-
 document.getElementById("nextIn").innerText="IN: "+(inn?inn.name:"-");
-
 }
-
-
 
 function updateSubTimer(){
-
 if(subSeconds<0) subSeconds=0;
-
 document.getElementById("subTimer").innerText="Nästa byte: "+formatTime(subSeconds);
-
 }
-
-
 
 function notifySub(){
-
 document.getElementById("subButton").style.boxShadow="0 0 25px red";
-
 if(navigator.vibrate) navigator.vibrate([200,100,200]);
-
 }
 
-
-
 function endMatch(){
-
-if(!confirm("Vill du verkligen avsluta matchen?")) return;
-
 clearInterval(matchTimer);
 document.getElementById("match").classList.add("hidden");
 document.getElementById("stats").classList.remove("hidden");
-
 let statsList=document.getElementById("statsList");
 statsList.innerHTML="";
-
 players.sort((a,b)=>b.time-a.time)
 .forEach(p=>{
 let li=document.createElement("li");
@@ -754,271 +381,135 @@ statsList.appendChild(li);
 });
 }
 
-}
-
-
-
 function resetApp(){location.reload();}
 
-
-
 function formatTime(sec){
-
 const m=Math.floor(sec/60);
-
 const s=sec%60;
-
 return (m<10?"0":"")+m+":"+(s<10?"0":"")+s;
-
 }
-
-
 
 /* ---------- LAG ---------- */
 
-
-
 function openTeamModal(){
-
 loadTeamDropdown();
-
 document.getElementById("teamModal").classList.add("active");
-
 }
-
-
 
 function closeTeamModal(){
-
 document.getElementById("teamModal").classList.remove("active");
-
 }
-
-
 
 function loadTeamDropdown(){
-
 let select=document.getElementById("teamSelect");
-
 select.innerHTML="<option value=''>Välj lag</option>";
-
 Object.keys(teams).forEach(name=>{
-
 let opt=document.createElement("option");
-
 opt.value=name;
-
 opt.textContent=name;
-
 select.appendChild(opt);
-
 });
-
 }
-
-
 
 function createNewTeam(){
-
 let name=document.getElementById("teamNameInput").value.trim();
-
 if(!name) return;
-
 teams[name]=[];
-
 currentTeam=name;
-
 saveTeams();
-
 loadTeamDropdown();
-
 alert("Lag skapat");
-
 }
-
-
 
 function loadTeamForEdit(){
-
 let name=document.getElementById("teamSelect").value;
-
 if(!name) return;
-
 currentTeam=name;
-
 renderTeamPlayers();
-
 }
-
-
 
 function renderTeamPlayers(){
-
 let container=document.getElementById("teamPlayers");
-
 container.innerHTML="";
-
 teams[currentTeam].forEach((p,i)=>{
-
 let div=document.createElement("div");
-
 div.className="player-item";
-
 div.innerHTML=
-
 `<input type="checkbox" id="chk${i}" checked> ${p}
-
 <button onclick="removePlayerFromTeam(${i})" style="float:right;background:#ff4d4d;color:white;border:none;border-radius:8px;">x</button>`;
-
 container.appendChild(div);
-
 });
-
 }
-
-
 
 function addPlayerToTeam(){
-
 let name=document.getElementById("newTeamPlayer").value.trim();
-
 if(!name||!currentTeam) return;
-
 teams[currentTeam].push(name);
-
 document.getElementById("newTeamPlayer").value="";
-
 renderTeamPlayers();
-
 }
-
-
 
 function removePlayerFromTeam(index){
-
 teams[currentTeam].splice(index,1);
-
 renderTeamPlayers();
-
 }
-
-
 
 function saveTeam(){
-
 if(!currentTeam) return;
-
 saveTeams();
-
 alert("Lag sparat");
-
 }
-
-
 
 function deleteTeam(){
-
 if(!currentTeam) return;
-
 delete teams[currentTeam];
-
 currentTeam=null;
-
 saveTeams();
-
 loadTeamDropdown();
-
 document.getElementById("teamPlayers").innerHTML="";
-
 }
-
-
 
 function saveTeams(){
-
 localStorage.setItem("teams",JSON.stringify(teams));
-
 }
-
-
 
 function importSelectedPlayers(){
-
 if(!currentTeam) return;
-
 players=[];
-
 teams[currentTeam].forEach((name,i)=>{
-
 if(document.getElementById("chk"+i).checked){
-
 players.push({name:name,time:0,onField:false});
-
 }
-
 });
-
 renderPlayers();
-
 closeTeamModal();
-
 }
-
-
 
 /* ---------- SPELARE ---------- */
 
-
-
 function addPlayer(){
-
 const name=document.getElementById("nameInput").value.trim();
-
 if(!name) return;
-
 players.push({name:name,time:0,onField:false});
-
 document.getElementById("nameInput").value="";
-
 renderPlayers();
-
 }
-
-
 
 function renderPlayers(){
-
 let list=document.getElementById("playerList");
-
 list.innerHTML="";
-
 players.forEach(p=>{
-
 let li=document.createElement("li");
-
 li.className="player-item";
-
 li.innerText=p.name;
-
 li.onclick=()=>{
-
 p.onField=!p.onField;
-
 li.style.background=p.onField?"#00ff9d":"rgba(255,255,255,0.08)";
-
 li.style.color=p.onField?"black":"white";
-
 };
-
 list.appendChild(li);
-
 });
-
 }
-
 </script>
-
 </body>
-
 </html>
-
