@@ -11,7 +11,7 @@ maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f2027">
 
-<title>Avbytaren Pro</title>
+<title>Avbytaren</title>
 
 <style>
 html,body{
@@ -27,6 +27,27 @@ user-select:none;
 
 .container{padding:20px;}
 .hidden{display:none;}
+
+.app-header{
+margin-bottom:25px;
+}
+
+.app-header h1{
+margin:0;
+font-size:38px;
+font-weight:900;
+letter-spacing:3px;
+background:linear-gradient(90deg,#00ff9d,#00c97c);
+-webkit-background-clip:text;
+-webkit-text-fill-color:transparent;
+}
+
+.tagline{
+margin-top:6px;
+font-size:14px;
+opacity:0.7;
+letter-spacing:1px;
+}
 
 input{
 padding:12px;
@@ -76,7 +97,7 @@ background:rgba(255,255,255,0.08);
 }
 
 .swap-name{
-font-size:32px;
+font-size:34px;
 font-weight:900;
 margin:8px 0;
 }
@@ -124,7 +145,14 @@ max-width:350px;
 
 <!-- SETUP -->
 <div class="container" id="setup">
-<h2>Lägg till spelare</h2>
+
+<div class="app-header">
+<h1>AVBYTAREN</h1>
+<p class="tagline">Smart bytehantering för match</p>
+<button onclick="openInfo()" style="background:#ffffff22;color:white;">OM</button>
+</div>
+
+<h3>Lägg till spelare</h3>
 
 <input type="text" id="nameInput" placeholder="Spelarnamn">
 <button class="primary" onclick="addPlayer()">Lägg till</button>
@@ -143,7 +171,6 @@ max-width:350px;
 <div class="timer" id="matchTime">00:00</div>
 <div class="timer" id="subTimer">Nästa byte: --:--</div>
 
-<!-- TYDLIG BYTE-RUTA -->
 <div class="swap-box">
 <div class="swap-name out" id="nextOut">UT: -</div>
 <div class="swap-name in" id="nextIn">IN: -</div>
@@ -174,6 +201,23 @@ max-width:350px;
 <button class="primary big-btn" onclick="resetApp()">Ny match</button>
 </div>
 
+<!-- INFO MODAL -->
+<div id="infoModal" class="modal">
+<div class="modal-box">
+<h3>Så fungerar Avbytaren</h3>
+<p><b>1.</b> Lägg till spelare.</p>
+<p><b>2.</b> Markera vilka som startar.</p>
+<p><b>3.</b> Ange antal på plan.</p>
+<p><b>4.</b> Ange minuter mellan byten.</p>
+<p><b>5.</b> Starta match.</p>
+<hr>
+<p>🔴 Röd = På plan</p>
+<p>🟢 Grön = Avbytare</p>
+<p>Klicka namn för manuellt byte.</p>
+<button class="primary" onclick="closeInfo()">Stäng</button>
+</div>
+</div>
+
 <!-- MODAL -->
 <div id="confirmModal" class="modal">
 <div class="modal-box">
@@ -194,7 +238,6 @@ let matchTimer=null;
 let manualOut=null;
 let manualIn=null;
 
-/* LÄGG TILL SPELARE */
 function addPlayer(){
 const name=nameInput.value.trim();
 if(!name) return;
@@ -218,15 +261,11 @@ playerList.appendChild(li);
 });
 }
 
-/* START MATCH */
 function startMatch(){
 const count=parseInt(onFieldCount.value);
 const interval=parseFloat(subInterval.value);
 
-if(!interval || interval<=0){
-alert("Ange minuter mellan byten.");
-return;
-}
+if(!interval || interval<=0){alert("Ange minuter mellan byten.");return;}
 
 const starters=players.filter(p=>p.onField);
 const bench=players.filter(p=>!p.onField);
@@ -258,7 +297,6 @@ updateLists();
 updateSwapBox();
 }
 
-/* TIMER */
 function formatTime(sec){
 const m=Math.floor(sec/60);
 const s=sec%60;
@@ -275,63 +313,47 @@ subButton.style.boxShadow="0 0 25px red";
 if(navigator.vibrate) navigator.vibrate([200,100,200]);
 }
 
-/* LISTOR */
 function updateLists(){
 fieldList.innerHTML="";
 benchList.innerHTML="";
 
-fieldQueue.forEach((p,i)=>{
+fieldQueue.forEach(p=>{
 const li=document.createElement("li");
 li.className="player-item";
 li.innerText=p.name;
 li.style.color="#ff4d4d";
-if(i===0 && !manualOut) li.style.fontWeight="900";
 if(p===manualOut) li.classList.add("selected");
-li.onclick=()=>{
-manualOut=p===manualOut?null:p;
-updateSwapBox();
-updateLists();
-};
+li.onclick=()=>{manualOut=p===manualOut?null:p;updateSwapBox();updateLists();};
 fieldList.appendChild(li);
 });
 
-benchQueue.forEach((p,i)=>{
+benchQueue.forEach(p=>{
 const li=document.createElement("li");
 li.className="player-item";
 li.innerText=p.name;
 li.style.color="#00ff9d";
-if(i===0 && !manualIn) li.style.fontWeight="900";
 if(p===manualIn) li.classList.add("selected");
-li.onclick=()=>{
-manualIn=p===manualIn?null:p;
-updateSwapBox();
-updateLists();
-};
+li.onclick=()=>{manualIn=p===manualIn?null:p;updateSwapBox();updateLists();};
 benchList.appendChild(li);
 });
 }
 
-/* BYTE-RUTA */
 function updateSwapBox(){
 let out=manualOut || fieldQueue[0];
 let inn=manualIn || benchQueue[0];
-
 nextOut.innerText="UT: "+(out?out.name:"-");
 nextIn.innerText="IN: "+(inn?inn.name:"-");
 }
 
-/* BYTE */
 function makeSub(){
 subButton.style.boxShadow="none";
 
 let out=manualOut || fieldQueue[0];
 let inn=manualIn || benchQueue[0];
-
 if(!out || !inn) return;
 
 fieldQueue=fieldQueue.filter(p=>p!==out);
 benchQueue=benchQueue.filter(p=>p!==inn);
-
 benchQueue.push(out);
 fieldQueue.push(inn);
 
@@ -344,9 +366,10 @@ updateLists();
 updateSwapBox();
 }
 
-/* MODAL */
 function openModal(){confirmModal.classList.add("active");}
 function closeModal(){confirmModal.classList.remove("active");}
+function openInfo(){infoModal.classList.add("active");}
+function closeInfo(){infoModal.classList.remove("active");}
 
 function confirmEnd(){
 clearInterval(matchTimer);
@@ -367,7 +390,6 @@ confirmModal.classList.remove("active");
 
 function resetApp(){location.reload();}
 
-/* STOPPA DUBBELZOOM */
 let lastTouchEnd=0;
 document.addEventListener('touchend',function(e){
 const now=Date.now();
@@ -375,5 +397,6 @@ if(now-lastTouchEnd<=300){e.preventDefault();}
 lastTouchEnd=now;
 },false);
 </script>
+
 </body>
 </html>
