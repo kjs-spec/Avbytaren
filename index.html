@@ -230,35 +230,6 @@ overflow:auto;
 <button class="primary big-btn" onclick="resetApp()">Ny match</button>
 </div>
 
-<!-- LAG MODAL -->
-<div id="teamModal" class="modal">
-<div class="modal-box">
-<h3>Hantera lag</h3>
-
-<select id="teamSelect" onchange="loadTeamForEdit()"></select>
-<button onclick="deleteTeam()" class="danger">Radera lag</button>
-
-<hr>
-
-<input type="text" id="teamNameInput" placeholder="Nytt lag-namn">
-<button onclick="createNewTeam()">Skapa nytt lag</button>
-
-<hr>
-
-<div id="teamPlayers"></div>
-
-<input type="text" id="newTeamPlayer" placeholder="Lägg till spelare i lag">
-<button onclick="addPlayerToTeam()">Lägg till</button>
-
-<hr>
-
-<button class="primary" onclick="saveTeam()">Spara lag</button>
-<button class="primary" onclick="importSelectedPlayers()">Importera till match</button>
-<button onclick="closeTeamModal()">Stäng</button>
-
-</div>
-</div>
-
 <script>
 let players=[];
 let fieldQueue=[];
@@ -270,19 +241,21 @@ let matchTimer=null;
 let manualOut=null;
 let manualIn=null;
 
-let teams=JSON.parse(localStorage.getItem("teams")||"{}");
-let currentTeam=null;
-
-/* ---------- MATCH ---------- */
+/* MATCH */
 
 function startMatch(){
 const count=parseInt(document.getElementById("onFieldCount").value);
 const interval=parseFloat(document.getElementById("subInterval").value);
 
 if(!interval||interval<=0){alert("Ange minuter mellan byten.");return;}
+
 const starters=players.filter(p=>p.onField);
 const bench=players.filter(p=>!p.onField);
-if(starters.length!==count){alert("Markera exakt "+count+" spelare.");return;}
+
+if(starters.length!==count){
+alert("Markera exakt "+count+" spelare.");
+return;
+}
 
 fieldQueue=[...starters];
 benchQueue=[...bench];
@@ -310,13 +283,16 @@ document.getElementById("subButton").style.boxShadow="none";
 let out=manualOut||fieldQueue[0];
 let inn=manualIn||benchQueue[0];
 if(!out||!inn)return;
+
 fieldQueue=fieldQueue.filter(p=>p!==out);
 benchQueue=benchQueue.filter(p=>p!==inn);
 benchQueue.push(out);
 fieldQueue.push(inn);
+
 manualOut=null;
 manualIn=null;
 subSeconds=subIntervalSeconds;
+
 updateSubTimer();
 updateLists();
 updateSwapBox();
@@ -367,11 +343,16 @@ if(navigator.vibrate) navigator.vibrate([200,100,200]);
 }
 
 function endMatch(){
+if(!confirm("Vill du verkligen avsluta matchen?")) return;
+
 clearInterval(matchTimer);
+
 document.getElementById("match").classList.add("hidden");
 document.getElementById("stats").classList.remove("hidden");
+
 let statsList=document.getElementById("statsList");
 statsList.innerHTML="";
+
 players.sort((a,b)=>b.time-a.time)
 .forEach(p=>{
 let li=document.createElement("li");
@@ -388,104 +369,6 @@ const m=Math.floor(sec/60);
 const s=sec%60;
 return (m<10?"0":"")+m+":"+(s<10?"0":"")+s;
 }
-
-/* ---------- LAG ---------- */
-
-function openTeamModal(){
-loadTeamDropdown();
-document.getElementById("teamModal").classList.add("active");
-}
-
-function closeTeamModal(){
-document.getElementById("teamModal").classList.remove("active");
-}
-
-function loadTeamDropdown(){
-let select=document.getElementById("teamSelect");
-select.innerHTML="<option value=''>Välj lag</option>";
-Object.keys(teams).forEach(name=>{
-let opt=document.createElement("option");
-opt.value=name;
-opt.textContent=name;
-select.appendChild(opt);
-});
-}
-
-function createNewTeam(){
-let name=document.getElementById("teamNameInput").value.trim();
-if(!name) return;
-teams[name]=[];
-currentTeam=name;
-saveTeams();
-loadTeamDropdown();
-alert("Lag skapat");
-}
-
-function loadTeamForEdit(){
-let name=document.getElementById("teamSelect").value;
-if(!name) return;
-currentTeam=name;
-renderTeamPlayers();
-}
-
-function renderTeamPlayers(){
-let container=document.getElementById("teamPlayers");
-container.innerHTML="";
-teams[currentTeam].forEach((p,i)=>{
-let div=document.createElement("div");
-div.className="player-item";
-div.innerHTML=
-`<input type="checkbox" id="chk${i}" checked> ${p}
-<button onclick="removePlayerFromTeam(${i})" style="float:right;background:#ff4d4d;color:white;border:none;border-radius:8px;">x</button>`;
-container.appendChild(div);
-});
-}
-
-function addPlayerToTeam(){
-let name=document.getElementById("newTeamPlayer").value.trim();
-if(!name||!currentTeam) return;
-teams[currentTeam].push(name);
-document.getElementById("newTeamPlayer").value="";
-renderTeamPlayers();
-}
-
-function removePlayerFromTeam(index){
-teams[currentTeam].splice(index,1);
-renderTeamPlayers();
-}
-
-function saveTeam(){
-if(!currentTeam) return;
-saveTeams();
-alert("Lag sparat");
-}
-
-function deleteTeam(){
-if(!currentTeam) return;
-delete teams[currentTeam];
-currentTeam=null;
-saveTeams();
-loadTeamDropdown();
-document.getElementById("teamPlayers").innerHTML="";
-}
-
-function saveTeams(){
-localStorage.setItem("teams",JSON.stringify(teams));
-}
-
-function importSelectedPlayers(){
-if(!currentTeam) return;
-players=[];
-teams[currentTeam].forEach((name,i)=>{
-if(document.getElementById("chk"+i).checked){
-players.push({name:name,time:0,onField:false});
-}
-});
-renderPlayers();
-closeTeamModal();
-}
-
-/* ---------- SPELARE ---------- */
 
 function addPlayer(){
 const name=document.getElementById("nameInput").value.trim();
