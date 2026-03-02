@@ -41,7 +41,7 @@ margin-bottom:35px;
 
 .app-header h1{
 margin:0;
-font-size:44px;
+font-size:40px;
 font-weight:900;
 letter-spacing:4px;
 text-transform:uppercase;
@@ -55,13 +55,6 @@ animation: shimmer 4s linear infinite;
 
 @keyframes shimmer {
 to { background-position:200% center; }
-}
-
-.tagline{
-margin-top:8px;
-font-size:14px;
-opacity:0.6;
-letter-spacing:2px;
 }
 
 .section-header{
@@ -78,7 +71,6 @@ border-radius:50%;
 width:32px;
 height:32px;
 font-size:20px;
-line-height:32px;
 padding:0;
 }
 
@@ -111,13 +103,13 @@ color:white;
 }
 
 .big-btn{
-font-size:26px;
-padding:22px;
+font-size:24px;
+padding:20px;
 width:90%;
 }
 
 .timer{
-font-size:48px;
+font-size:44px;
 font-weight:800;
 margin:10px;
 }
@@ -130,7 +122,7 @@ background:rgba(255,255,255,0.08);
 }
 
 .swap-name{
-font-size:36px;
+font-size:32px;
 font-weight:900;
 margin:8px 0;
 }
@@ -148,7 +140,7 @@ padding:10px;
 margin:5px 0;
 border-radius:10px;
 background:rgba(255,255,255,0.08);
-text-align:left;
+cursor:pointer;
 }
 
 .selected{
@@ -179,11 +171,11 @@ overflow:auto;
 </head>
 <body>
 
+<!-- SETUP -->
 <div class="container" id="setup">
 
 <div class="app-header">
 <h1>AVBYTAREN</h1>
-<p class="tagline">Smart bytehantering för match</p>
 </div>
 
 <div class="section-header">
@@ -200,6 +192,42 @@ overflow:auto;
 <input type="number" id="subInterval" placeholder="Minuter mellan byten">
 
 <button class="primary big-btn" onclick="startMatch()">STARTA MATCH</button>
+</div>
+
+<!-- MATCH -->
+<div class="container hidden" id="match">
+
+<div class="timer" id="matchTime">00:00</div>
+<div class="timer" id="subTimer">Nästa byte: --:--</div>
+
+<div class="swap-box">
+<div class="swap-name out" id="nextOut">UT: -</div>
+<div class="swap-name in" id="nextIn">IN: -</div>
+</div>
+
+<button id="subButton" class="primary big-btn" onclick="makeSub()">GENOMFÖR BYTE</button>
+<button class="danger" onclick="endMatch()">Avbryt</button>
+
+<hr>
+
+<div style="display:flex;justify-content:space-between;">
+<div style="width:48%;">
+<h3 style="color:#00ff9d;">På plan</h3>
+<ul id="fieldList" class="list"></ul>
+</div>
+<div style="width:48%;">
+<h3 style="color:#ff4d4d;">Avbytare</h3>
+<ul id="benchList" class="list"></ul>
+</div>
+</div>
+
+</div>
+
+<!-- STATISTIK -->
+<div class="container hidden" id="stats">
+<h2>Matchstatistik</h2>
+<ul id="statsList" class="list"></ul>
+<button class="primary big-btn" onclick="resetApp()">Ny match</button>
 </div>
 
 <!-- LAG MODAL -->
@@ -233,10 +261,135 @@ overflow:auto;
 
 <script>
 let players=[];
+let fieldQueue=[];
+let benchQueue=[];
+let totalSeconds=0;
+let subSeconds=0;
+let subIntervalSeconds=0;
+let matchTimer=null;
+let manualOut=null;
+let manualIn=null;
+
 let teams=JSON.parse(localStorage.getItem("teams")||"{}");
 let currentTeam=null;
 
-/* ---------- LAGHANTERING ---------- */
+/* ---------- MATCH ---------- */
+
+function startMatch(){
+const count=parseInt(document.getElementById("onFieldCount").value);
+const interval=parseFloat(document.getElementById("subInterval").value);
+
+if(!interval||interval<=0){alert("Ange minuter mellan byten.");return;}
+const starters=players.filter(p=>p.onField);
+const bench=players.filter(p=>!p.onField);
+if(starters.length!==count){alert("Markera exakt "+count+" spelare.");return;}
+
+fieldQueue=[...starters];
+benchQueue=[...bench];
+subIntervalSeconds=Math.round(interval*60);
+subSeconds=subIntervalSeconds;
+
+document.getElementById("setup").classList.add("hidden");
+document.getElementById("match").classList.remove("hidden");
+
+matchTimer=setInterval(()=>{
+totalSeconds++;
+fieldQueue.forEach(p=>p.time++);
+document.getElementById("matchTime").innerText=formatTime(totalSeconds);
+subSeconds--;
+updateSubTimer();
+if(subSeconds<=0) notifySub();
+},1000);
+
+updateLists();
+updateSwapBox();
+}
+
+function makeSub(){
+document.getElementById("subButton").style.boxShadow="none";
+let out=manualOut||fieldQueue[0];
+let inn=manualIn||benchQueue[0];
+if(!out||!inn)return;
+fieldQueue=fieldQueue.filter(p=>p!==out);
+benchQueue=benchQueue.filter(p=>p!==inn);
+benchQueue.push(out);
+fieldQueue.push(inn);
+manualOut=null;
+manualIn=null;
+subSeconds=subIntervalSeconds;
+updateSubTimer();
+updateLists();
+updateSwapBox();
+}
+
+function updateLists(){
+let fieldList=document.getElementById("fieldList");
+let benchList=document.getElementById("benchList");
+fieldList.innerHTML="";
+benchList.innerHTML="";
+
+fieldQueue.forEach(p=>{
+let li=document.createElement("li");
+li.className="player-item";
+li.innerText=p.name;
+li.style.color="#00ff9d";
+if(p===manualOut) li.classList.add("selected");
+li.onclick=()=>{manualOut=p===manualOut?null:p;updateSwapBox();updateLists();};
+fieldList.appendChild(li);
+});
+
+benchQueue.forEach(p=>{
+let li=document.createElement("li");
+li.className="player-item";
+li.innerText=p.name;
+li.style.color="#ff4d4d";
+if(p===manualIn) li.classList.add("selected");
+li.onclick=()=>{manualIn=p===manualIn?null:p;updateSwapBox();updateLists();};
+benchList.appendChild(li);
+});
+}
+
+function updateSwapBox(){
+let out=manualOut||fieldQueue[0];
+let inn=manualIn||benchQueue[0];
+document.getElementById("nextOut").innerText="UT: "+(out?out.name:"-");
+document.getElementById("nextIn").innerText="IN: "+(inn?inn.name:"-");
+}
+
+function updateSubTimer(){
+if(subSeconds<0) subSeconds=0;
+document.getElementById("subTimer").innerText="Nästa byte: "+formatTime(subSeconds);
+}
+
+function notifySub(){
+document.getElementById("subButton").style.boxShadow="0 0 25px red";
+if(navigator.vibrate) navigator.vibrate([200,100,200]);
+}
+
+function endMatch(){
+clearInterval(matchTimer);
+document.getElementById("match").classList.add("hidden");
+document.getElementById("stats").classList.remove("hidden");
+let statsList=document.getElementById("statsList");
+statsList.innerHTML="";
+players.sort((a,b)=>b.time-a.time)
+.forEach(p=>{
+let li=document.createElement("li");
+li.className="player-item";
+li.innerText=p.name+" – "+formatTime(p.time);
+statsList.appendChild(li);
+});
+}
+
+function resetApp(){location.reload();}
+
+function formatTime(sec){
+const m=Math.floor(sec/60);
+const s=sec%60;
+return (m<10?"0":"")+m+":"+(s<10?"0":"")+s;
+}
+
+/* ---------- LAG ---------- */
 
 function openTeamModal(){
 loadTeamDropdown();
@@ -332,7 +485,7 @@ renderPlayers();
 closeTeamModal();
 }
 
-/* ---------- SPELARHANTERING ---------- */
+/* ---------- SPELARE ---------- */
 
 function addPlayer(){
 const name=document.getElementById("nameInput").value.trim();
@@ -358,6 +511,5 @@ list.appendChild(li);
 });
 }
 </script>
-
 </body>
 </html>
