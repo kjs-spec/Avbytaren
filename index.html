@@ -6,7 +6,6 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f2027">
-
 <title>Avbytaren Pro</title>
 
 <style>
@@ -30,9 +29,7 @@ text-align:center;
 .container{padding:20px;}
 .hidden{display:none;}
 
-h2{margin-top:0;}
-
-input,select{
+input{
 padding:12px;
 border-radius:12px;
 border:none;
@@ -61,15 +58,14 @@ color:white;
 }
 
 .big-btn{
-font-size:26px;
-padding:22px;
+font-size:28px;
+padding:24px;
 width:90%;
 }
 
 .manual-mode{
 background:linear-gradient(90deg,#ff0000,#ff4d4d)!important;
 color:white!important;
-box-shadow:0 0 20px rgba(255,0,0,0.7);
 }
 
 .list{list-style:none;padding:0;}
@@ -79,24 +75,22 @@ padding:12px;
 margin:6px 0;
 border-radius:12px;
 background:var(--glass);
-transition:0.2s;
 }
 
-.selected-bench{
-border:2px solid var(--red);
-}
-
-.selected-field{
-border:2px solid var(--green);
-}
+.selected-bench{border:2px solid var(--red);}
+.selected-field{border:2px solid var(--green);}
 
 .timer{
-font-size:48px;
+font-size:52px;
 font-weight:800;
 margin:10px;
 }
 
-/* FIXAD MODAL */
+.next-highlight{
+font-size:32px;
+font-weight:800;
+}
+
 .modal{
 position:fixed;
 inset:0;
@@ -123,23 +117,10 @@ max-width:350px;
 
 <div class="container" id="setup">
 
-<h2>Lag</h2>
+<h2>Lägg till spelare</h2>
 
-<select id="teamSelect"></select>
-<br>
-<button onclick="loadTeam()">Ladda lag</button>
-<button onclick="saveTeam()">Spara lag</button>
-<button onclick="chooseToday()">Välj vilka är med idag</button>
-
-<div id="todaySelect" class="hidden">
-<h3>Vilka är med idag?</h3>
-<ul id="todayList" class="list"></ul>
-<button class="primary" onclick="confirmToday()">Fortsätt</button>
-</div>
-
-<hr>
-
-<h2>Matchinställningar</h2>
+<input type="text" id="nameInput" placeholder="Spelarnamn">
+<button class="primary" onclick="addPlayer()">Lägg till</button>
 
 <ul id="playerList" class="list"></ul>
 
@@ -154,7 +135,6 @@ max-width:350px;
 <div class="timer" id="matchTime">00:00</div>
 
 <button id="subButton" class="primary big-btn" onclick="makeSub()">BYTE</button>
-
 <button class="danger" onclick="openModal()">Avbryt</button>
 
 <div style="display:flex;justify-content:space-between;margin-top:20px;">
@@ -168,6 +148,14 @@ max-width:350px;
 </div>
 </div>
 
+<hr>
+
+<h3>Nästa ut</h3>
+<ul id="nextOutList" class="list"></ul>
+
+<h3>Nästa in</h3>
+<ul id="nextInList" class="list"></ul>
+
 </div>
 
 <div id="confirmModal" class="modal">
@@ -180,62 +168,21 @@ max-width:350px;
 
 <script>
 
-let teams = JSON.parse(localStorage.getItem("teams_pro")) || {};
-let players=[], onField=[], bench=[];
-let selectedBench=null, selectedField=null;
-let totalSeconds=0, matchTimer=null;
+let players=[];
+let fieldQueue=[];
+let benchQueue=[];
+let selectedBench=null;
+let selectedField=null;
+let totalSeconds=0;
+let matchTimer=null;
 
-function refreshDropdown(){
-const select=document.getElementById("teamSelect");
-select.innerHTML="";
-Object.keys(teams).forEach(name=>{
-const option=document.createElement("option");
-option.value=name;
-option.innerText=name;
-select.appendChild(option);
-});
-}
-refreshDropdown();
-
-function saveTeam(){
-const name=prompt("Lagnamn?");
-if(!name)return;
-teams[name]=players.map(p=>p.name);
-localStorage.setItem("teams_pro",JSON.stringify(teams));
-refreshDropdown();
-}
-
-function loadTeam(){
-const name=document.getElementById("teamSelect").value;
-if(!teams[name])return;
-players=teams[name].map(n=>({name:n,time:0,onField:false}));
+function addPlayer(){
+const input=document.getElementById("nameInput");
+const name=input.value.trim();
+if(!name) return;
+players.push({name:name,time:0,onField:false});
+input.value="";
 renderPlayers();
-}
-
-function chooseToday(){
-const name=document.getElementById("teamSelect").value;
-if(!teams[name])return;
-
-const list=document.getElementById("todayList");
-list.innerHTML="";
-
-teams[name].forEach(player=>{
-const li=document.createElement("li");
-li.className="player-item";
-li.innerHTML=`<label>
-<input type="checkbox" value="${player}"> ${player}
-</label>`;
-list.appendChild(li);
-});
-
-document.getElementById("todaySelect").classList.remove("hidden");
-}
-
-function confirmToday(){
-const checked=[...document.querySelectorAll("#todayList input:checked")];
-players=checked.map(c=>({name:c.value,time:0,onField:false}));
-renderPlayers();
-document.getElementById("todaySelect").classList.add("hidden");
 }
 
 function renderPlayers(){
@@ -256,22 +203,24 @@ list.appendChild(li);
 
 function startMatch(){
 const count=parseInt(document.getElementById("onFieldCount").value);
-onField=players.filter(p=>p.onField);
-bench=players.filter(p=>!p.onField);
+const starters=players.filter(p=>p.onField);
+const bench=players.filter(p=>!p.onField);
 
-if(onField.length!==count){
+if(starters.length!==count){
 alert("Markera exakt "+count+" spelare.");
 return;
 }
+
+fieldQueue=[...starters];
+benchQueue=[...bench];
 
 document.getElementById("setup").classList.add("hidden");
 document.getElementById("match").classList.remove("hidden");
 
 matchTimer=setInterval(()=>{
 totalSeconds++;
-onField.forEach(p=>p.time++);
+fieldQueue.forEach(p=>p.time++);
 document.getElementById("matchTime").innerText=formatTime(totalSeconds);
-updateLists();
 },1000);
 
 updateLists();
@@ -286,26 +235,44 @@ return (m<10?"0":"")+m+":"+(s<10?"0":"")+s;
 function updateLists(){
 const benchList=document.getElementById("benchList");
 const fieldList=document.getElementById("fieldList");
+const nextOut=document.getElementById("nextOutList");
+const nextIn=document.getElementById("nextInList");
 
 benchList.innerHTML="";
 fieldList.innerHTML="";
+nextOut.innerHTML="";
+nextIn.innerHTML="";
 
-bench.forEach(p=>{
+benchQueue.forEach((p,i)=>{
 const li=document.createElement("li");
 li.className="player-item";
 li.innerText=p.name;
-if(selectedBench===p)li.classList.add("selected-bench");
+if(i===0) li.classList.add("next-highlight");
+if(selectedBench===p) li.classList.add("selected-bench");
 li.onclick=()=>{selectedBench=selectedBench===p?null:p;updateLists();}
 benchList.appendChild(li);
 });
 
-onField.sort((a,b)=>b.time-a.time).forEach(p=>{
+fieldQueue.forEach((p,i)=>{
 const li=document.createElement("li");
 li.className="player-item";
 li.innerText=p.name;
-if(selectedField===p)li.classList.add("selected-field");
+if(i===0) li.classList.add("next-highlight");
+if(selectedField===p) li.classList.add("selected-field");
 li.onclick=()=>{selectedField=selectedField===p?null:p;updateLists();}
 fieldList.appendChild(li);
+});
+
+fieldQueue.slice(0,3).forEach(p=>{
+const li=document.createElement("li");
+li.innerText=p.name;
+nextOut.appendChild(li);
+});
+
+benchQueue.slice(0,3).forEach(p=>{
+const li=document.createElement("li");
+li.innerText=p.name;
+nextIn.appendChild(li);
 });
 
 const btn=document.getElementById("subButton");
@@ -319,20 +286,19 @@ btn.classList.remove("manual-mode");
 }
 
 function makeSub(){
-if(selectedBench&&selectedField){
-bench=bench.filter(p=>p!==selectedBench);
-bench.push(selectedField);
-onField=onField.filter(p=>p!==selectedField);
-onField.push(selectedBench);
+if(selectedBench && selectedField){
+benchQueue=benchQueue.filter(p=>p!==selectedBench);
+fieldQueue=fieldQueue.filter(p=>p!==selectedField);
+benchQueue.push(selectedField);
+fieldQueue.push(selectedBench);
 selectedBench=null;
 selectedField=null;
 } else {
-if(bench.length===0)return;
-const out=onField[0];
-const inn=bench.shift();
-bench.push(out);
-onField.shift();
-onField.push(inn);
+if(benchQueue.length===0) return;
+const out=fieldQueue.shift();
+const inn=benchQueue.shift();
+benchQueue.push(out);
+fieldQueue.push(inn);
 }
 updateLists();
 }
