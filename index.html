@@ -1,707 +1,355 @@
 <!DOCTYPE html>
-
 <html lang="sv">
-
 <head>
-
 <meta charset="UTF-8">
-
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f2027">
 
 <title>Avbytaren Pro</title>
 
-
-
 <style>
-
 :root{
-
-  --bg1:#0f2027;
-
-  --bg2:#203a43;
-
-  --bg3:#2c5364;
-
-  --green:#00ff9d;
-
-  --red:#ff4d4d;
-
-  --glass:rgba(255,255,255,0.06);
-
+--bg1:#0f2027;
+--bg2:#203a43;
+--bg3:#2c5364;
+--green:#00ff9d;
+--red:#ff4d4d;
+--glass:rgba(255,255,255,0.06);
 }
-
-
 
 body{
-
-  margin:0;
-
-  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
-
-  background:linear-gradient(160deg,var(--bg1),var(--bg2),var(--bg3));
-
-  color:white;
-
-  text-align:center;
-
+margin:0;
+font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+background:linear-gradient(160deg,var(--bg1),var(--bg2),var(--bg3));
+color:white;
+text-align:center;
 }
 
-
-
 .container{padding:20px;}
-
 .hidden{display:none;}
-
-
 
 h2{margin-top:0;}
 
-
-
 input,select{
-
-  padding:12px;
-
-  border-radius:12px;
-
-  border:none;
-
-  margin:6px;
-
-  background:var(--glass);
-
-  color:white;
-
-  width:85%;
-
+padding:12px;
+border-radius:12px;
+border:none;
+margin:6px;
+background:var(--glass);
+color:white;
+width:85%;
 }
-
-
 
 button{
-
-  padding:14px 18px;
-
-  border-radius:14px;
-
-  border:none;
-
-  margin:6px;
-
-  font-weight:600;
-
+padding:14px 18px;
+border-radius:14px;
+border:none;
+margin:6px;
+font-weight:600;
 }
-
-
 
 .primary{
-
-  background:linear-gradient(90deg,var(--green),#00c97c);
-
-  color:black;
-
+background:linear-gradient(90deg,var(--green),#00c97c);
+color:black;
 }
-
-
 
 .danger{
-
-  background:var(--red);
-
-  color:white;
-
+background:var(--red);
+color:white;
 }
-
-
 
 .big-btn{
-
-  font-size:24px;
-
-  padding:22px;
-
-  width:90%;
-
+font-size:26px;
+padding:22px;
+width:90%;
 }
-
-
 
 .manual-mode{
-
-  background:linear-gradient(90deg,#ff0000,#ff4d4d)!important;
-
-  color:white!important;
-
-  box-shadow:0 0 20px rgba(255,0,0,0.7);
-
+background:linear-gradient(90deg,#ff0000,#ff4d4d)!important;
+color:white!important;
+box-shadow:0 0 20px rgba(255,0,0,0.7);
 }
-
-
 
 .list{list-style:none;padding:0;}
 
-
-
 .player-item{
-
-  padding:12px;
-
-  margin:6px 0;
-
-  border-radius:12px;
-
-  background:var(--glass);
-
-  transition:0.2s;
-
+padding:12px;
+margin:6px 0;
+border-radius:12px;
+background:var(--glass);
+transition:0.2s;
 }
-
-
 
 .selected-bench{
-
-  border:2px solid var(--red);
-
-  box-shadow:0 0 12px rgba(255,77,77,0.7);
-
+border:2px solid var(--red);
 }
-
-
 
 .selected-field{
-
-  border:2px solid var(--green);
-
-  box-shadow:0 0 12px rgba(0,255,157,0.7);
-
+border:2px solid var(--green);
 }
-
-
 
 .timer{
-
-  font-size:48px;
-
-  font-weight:800;
-
-  margin:10px;
-
+font-size:48px;
+font-weight:800;
+margin:10px;
 }
 
-
-
+/* FIXAD MODAL */
 .modal{
-
- position:fixed;
-
- inset:0;
-
- background:rgba(0,0,0,0.6);
-
- display:flex;
-
- align-items:center;
-
- justify-content:center;
-
+position:fixed;
+inset:0;
+background:rgba(0,0,0,0.6);
+display:none;
+align-items:center;
+justify-content:center;
 }
 
-
+.modal.active{
+display:flex;
+}
 
 .modal-box{
-
- background:#1e2d36;
-
- padding:25px;
-
- border-radius:18px;
-
- width:80%;
-
- max-width:350px;
-
+background:#1e2d36;
+padding:25px;
+border-radius:18px;
+width:80%;
+max-width:350px;
 }
-
 </style>
-
 </head>
-
 <body>
-
-
 
 <div class="container" id="setup">
 
-
-
 <h2>Lag</h2>
 
-
-
 <select id="teamSelect"></select>
-
 <br>
-
 <button onclick="loadTeam()">Ladda lag</button>
-
 <button onclick="saveTeam()">Spara lag</button>
-
 <button onclick="chooseToday()">Välj vilka är med idag</button>
 
-
-
 <div id="todaySelect" class="hidden">
-
-  <h3>Vilka är med idag?</h3>
-
-  <ul id="todayList" class="list"></ul>
-
-  <button class="primary" onclick="confirmToday()">Fortsätt</button>
-
+<h3>Vilka är med idag?</h3>
+<ul id="todayList" class="list"></ul>
+<button class="primary" onclick="confirmToday()">Fortsätt</button>
 </div>
-
-
 
 <hr>
 
-
-
 <h2>Matchinställningar</h2>
-
-
 
 <ul id="playerList" class="list"></ul>
 
-
-
 <input type="number" id="onFieldCount" placeholder="Antal på plan">
-
-
 
 <button class="primary big-btn" onclick="startMatch()">STARTA MATCH</button>
 
-
-
 </div>
-
-
 
 <div class="container hidden" id="match">
 
-
-
 <div class="timer" id="matchTime">00:00</div>
-
-
 
 <button id="subButton" class="primary big-btn" onclick="makeSub()">BYTE</button>
 
-
-
 <button class="danger" onclick="openModal()">Avbryt</button>
 
-
-
 <div style="display:flex;justify-content:space-between;margin-top:20px;">
-
 <div style="width:45%;">
-
 <h3>Avbytare</h3>
-
 <ul id="benchList" class="list"></ul>
-
 </div>
-
 <div style="width:45%;">
-
 <h3>På plan</h3>
-
 <ul id="fieldList" class="list"></ul>
-
+</div>
 </div>
 
 </div>
 
-
-
-</div>
-
-
-
-<div id="confirmModal" class="modal hidden">
-
+<div id="confirmModal" class="modal">
 <div class="modal-box">
-
 <h3>Avbryta match?</h3>
-
 <button onclick="closeModal()">Fortsätt</button>
-
 <button class="danger" onclick="confirmEnd()">Avbryt</button>
-
 </div>
-
 </div>
-
-
 
 <script>
 
-
-
-/* ===== STORAGE ===== */
-
-
-
 let teams = JSON.parse(localStorage.getItem("teams_pro")) || {};
-
 let players=[], onField=[], bench=[];
-
 let selectedBench=null, selectedField=null;
-
 let totalSeconds=0, matchTimer=null;
 
-
-
-/* ===== TEAM ===== */
-
-
-
 function refreshDropdown(){
-
- const select=document.getElementById("teamSelect");
-
- select.innerHTML="";
-
- Object.keys(teams).forEach(name=>{
-
-   const option=document.createElement("option");
-
-   option.value=name;
-
-   option.innerText=name;
-
-   select.appendChild(option);
-
- });
-
+const select=document.getElementById("teamSelect");
+select.innerHTML="";
+Object.keys(teams).forEach(name=>{
+const option=document.createElement("option");
+option.value=name;
+option.innerText=name;
+select.appendChild(option);
+});
 }
-
 refreshDropdown();
 
-
-
 function saveTeam(){
-
- const name=prompt("Lagnamn?");
-
- if(!name)return;
-
- teams[name]=players.map(p=>p.name);
-
- localStorage.setItem("teams_pro",JSON.stringify(teams));
-
- refreshDropdown();
-
+const name=prompt("Lagnamn?");
+if(!name)return;
+teams[name]=players.map(p=>p.name);
+localStorage.setItem("teams_pro",JSON.stringify(teams));
+refreshDropdown();
 }
-
-
 
 function loadTeam(){
-
- const name=document.getElementById("teamSelect").value;
-
- if(!teams[name])return;
-
- players=teams[name].map(n=>({name:n,time:0,onField:false}));
-
- renderPlayers();
-
+const name=document.getElementById("teamSelect").value;
+if(!teams[name])return;
+players=teams[name].map(n=>({name:n,time:0,onField:false}));
+renderPlayers();
 }
-
-
 
 function chooseToday(){
+const name=document.getElementById("teamSelect").value;
+if(!teams[name])return;
 
- const name=document.getElementById("teamSelect").value;
+const list=document.getElementById("todayList");
+list.innerHTML="";
 
- if(!teams[name])return;
+teams[name].forEach(player=>{
+const li=document.createElement("li");
+li.className="player-item";
+li.innerHTML=`<label>
+<input type="checkbox" value="${player}"> ${player}
+</label>`;
+list.appendChild(li);
+});
 
-
-
- const list=document.getElementById("todayList");
-
- list.innerHTML="";
-
-
-
- teams[name].forEach(player=>{
-
-   const li=document.createElement("li");
-
-   li.className="player-item";
-
-   li.innerHTML=`<label>
-
-     <input type="checkbox" value="${player}"> ${player}
-
-   </label>`;
-
-   list.appendChild(li);
-
- });
-
-
-
- document.getElementById("todaySelect").classList.remove("hidden");
-
+document.getElementById("todaySelect").classList.remove("hidden");
 }
-
-
 
 function confirmToday(){
-
- const checked=[...document.querySelectorAll("#todayList input:checked")];
-
- players=checked.map(c=>({name:c.value,time:0,onField:false}));
-
- renderPlayers();
-
- document.getElementById("todaySelect").classList.add("hidden");
-
+const checked=[...document.querySelectorAll("#todayList input:checked")];
+players=checked.map(c=>({name:c.value,time:0,onField:false}));
+renderPlayers();
+document.getElementById("todaySelect").classList.add("hidden");
 }
-
-
-
-/* ===== PLAYERS ===== */
-
-
 
 function renderPlayers(){
-
- const list=document.getElementById("playerList");
-
- list.innerHTML="";
-
- players.forEach(p=>{
-
-   const li=document.createElement("li");
-
-   li.className="player-item";
-
-   li.innerText=p.name;
-
-   li.onclick=()=>{
-
-     p.onField=!p.onField;
-
-     li.style.background=p.onField?"#00ff9d":"var(--glass)";
-
-     li.style.color=p.onField?"black":"white";
-
-   };
-
-   list.appendChild(li);
-
- });
-
+const list=document.getElementById("playerList");
+list.innerHTML="";
+players.forEach(p=>{
+const li=document.createElement("li");
+li.className="player-item";
+li.innerText=p.name;
+li.onclick=()=>{
+p.onField=!p.onField;
+li.style.background=p.onField?"#00ff9d":"var(--glass)";
+li.style.color=p.onField?"black":"white";
+};
+list.appendChild(li);
+});
 }
-
-
-
-/* ===== MATCH ===== */
-
-
 
 function startMatch(){
+const count=parseInt(document.getElementById("onFieldCount").value);
+onField=players.filter(p=>p.onField);
+bench=players.filter(p=>!p.onField);
 
- const count=parseInt(document.getElementById("onFieldCount").value);
-
- onField=players.filter(p=>p.onField);
-
- bench=players.filter(p=>!p.onField);
-
-
-
- if(onField.length!==count){
-
-   alert("Markera exakt "+count+" spelare.");
-
-   return;
-
- }
-
-
-
- document.getElementById("setup").classList.add("hidden");
-
- document.getElementById("match").classList.remove("hidden");
-
-
-
- matchTimer=setInterval(()=>{
-
-   totalSeconds++;
-
-   onField.forEach(p=>p.time++);
-
-   document.getElementById("matchTime").innerText=formatTime(totalSeconds);
-
-   updateLists();
-
- },1000);
-
-
-
- updateLists();
-
+if(onField.length!==count){
+alert("Markera exakt "+count+" spelare.");
+return;
 }
 
+document.getElementById("setup").classList.add("hidden");
+document.getElementById("match").classList.remove("hidden");
 
+matchTimer=setInterval(()=>{
+totalSeconds++;
+onField.forEach(p=>p.time++);
+document.getElementById("matchTime").innerText=formatTime(totalSeconds);
+updateLists();
+},1000);
+
+updateLists();
+}
 
 function formatTime(sec){
-
- const m=Math.floor(sec/60);
-
- const s=sec%60;
-
- return (m<10?"0":"")+m+":"+(s<10?"0":"")+s;
-
+const m=Math.floor(sec/60);
+const s=sec%60;
+return (m<10?"0":"")+m+":"+(s<10?"0":"")+s;
 }
-
-
 
 function updateLists(){
+const benchList=document.getElementById("benchList");
+const fieldList=document.getElementById("fieldList");
 
- const benchList=document.getElementById("benchList");
+benchList.innerHTML="";
+fieldList.innerHTML="";
 
- const fieldList=document.getElementById("fieldList");
+bench.forEach(p=>{
+const li=document.createElement("li");
+li.className="player-item";
+li.innerText=p.name;
+if(selectedBench===p)li.classList.add("selected-bench");
+li.onclick=()=>{selectedBench=selectedBench===p?null:p;updateLists();}
+benchList.appendChild(li);
+});
 
+onField.sort((a,b)=>b.time-a.time).forEach(p=>{
+const li=document.createElement("li");
+li.className="player-item";
+li.innerText=p.name;
+if(selectedField===p)li.classList.add("selected-field");
+li.onclick=()=>{selectedField=selectedField===p?null:p;updateLists();}
+fieldList.appendChild(li);
+});
 
-
- benchList.innerHTML="";
-
- fieldList.innerHTML="";
-
-
-
- bench.forEach(p=>{
-
-   const li=document.createElement("li");
-
-   li.className="player-item";
-
-   li.innerText=p.name;
-
-   if(selectedBench===p)li.classList.add("selected-bench");
-
-   li.onclick=()=>{selectedBench=selectedBench===p?null:p;updateLists();}
-
-   benchList.appendChild(li);
-
- });
-
-
-
- onField.sort((a,b)=>b.time-a.time).forEach(p=>{
-
-   const li=document.createElement("li");
-
-   li.className="player-item";
-
-   li.innerText=p.name;
-
-   if(selectedField===p)li.classList.add("selected-field");
-
-   li.onclick=()=>{selectedField=selectedField===p?null:p;updateLists();}
-
-   fieldList.appendChild(li);
-
- });
-
-
-
- const btn=document.getElementById("subButton");
-
- if(selectedBench&&selectedField){
-
-   btn.innerText="MANUELLT BYTE";
-
-   btn.classList.add("manual-mode");
-
- } else {
-
-   btn.innerText="BYTE";
-
-   btn.classList.remove("manual-mode");
-
- }
-
+const btn=document.getElementById("subButton");
+if(selectedBench&&selectedField){
+btn.innerText="MANUELLT BYTE";
+btn.classList.add("manual-mode");
+} else {
+btn.innerText="BYTE";
+btn.classList.remove("manual-mode");
 }
-
-
+}
 
 function makeSub(){
-
- if(selectedBench&&selectedField){
-
-   bench=bench.filter(p=>p!==selectedBench);
-
-   bench.push(selectedField);
-
-   onField=onField.filter(p=>p!==selectedField);
-
-   onField.push(selectedBench);
-
-   selectedBench=null;
-
-   selectedField=null;
-
- } else {
-
-   if(bench.length===0)return;
-
-   const out=onField[0];
-
-   const inn=bench.shift();
-
-   bench.push(out);
-
-   onField.shift();
-
-   onField.push(inn);
-
- }
-
- updateLists();
-
+if(selectedBench&&selectedField){
+bench=bench.filter(p=>p!==selectedBench);
+bench.push(selectedField);
+onField=onField.filter(p=>p!==selectedField);
+onField.push(selectedBench);
+selectedBench=null;
+selectedField=null;
+} else {
+if(bench.length===0)return;
+const out=onField[0];
+const inn=bench.shift();
+bench.push(out);
+onField.shift();
+onField.push(inn);
+}
+updateLists();
 }
 
-
-
-/* ===== MODAL ===== */
-
-
-
 function openModal(){
-
- document.getElementById("confirmModal").classList.remove("hidden");
-
+document.getElementById("confirmModal").classList.add("active");
 }
 
 function closeModal(){
-
- document.getElementById("confirmModal").classList.add("hidden");
-
+document.getElementById("confirmModal").classList.remove("active");
 }
 
 function confirmEnd(){
-
- clearInterval(matchTimer);
-
- location.reload();
-
+clearInterval(matchTimer);
+location.reload();
 }
 
-
-
 </script>
+</body>
+</html>
