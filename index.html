@@ -278,6 +278,9 @@ let manualIn=null;
 
 let teams=JSON.parse(localStorage.getItem("teams")||"{}");
 let currentTeam=null;
+if ("Notification" in window) {
+Notification.requestPermission();
+
 
 /* ---------- MATCH ---------- */
 
@@ -368,10 +371,22 @@ document.getElementById("subTimer").innerText="Nästa byte: "+formatTime(subSeco
 }
 
 function notifySub(){
-document.getElementById("subButton").style.boxShadow="0 0 25px red";
-if(navigator.vibrate) navigator.vibrate([200,100,200]);
-}
 
+document.getElementById("subButton").style.boxShadow="0 0 25px red";
+
+if(navigator.vibrate) navigator.vibrate([200,100,200]);
+
+let out=manualOut||fieldQueue[0];
+let inn=manualIn||benchQueue[0];
+
+if (Notification.permission === "granted") {
+
+new Notification("Avbytaren – byte dags",{
+body:"UT: "+(out?out.name:"-")+" IN: "+(inn?inn.name:"-"),
+icon:"https://cdn-icons-png.flaticon.com/512/861/861512.png"
+});
+
+}
 function endMatch(){
 clearInterval(matchTimer);
 document.getElementById("match").classList.add("hidden");
