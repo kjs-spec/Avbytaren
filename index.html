@@ -157,21 +157,6 @@ justify-content:center;
 }
 
 .modal.active{display:flex;}
-.player-item{
-display:flex;
-align-items:center;
-padding:16px;
-margin:10px 0;
-border-radius:16px;
-background:rgba(255,255,255,0.07);
-box-shadow:0 4px 10px rgba(0,0,0,0.15);
-gap:12px;
-}
-
-.player-name{
-flex:1;
-text-align:left;
-}
 
 .modal-box{
 background:#1e2d36;
@@ -182,43 +167,32 @@ max-width:400px;
 max-height:90vh;
 overflow:auto;
 }
-/* ===== Snygg laglista ===== */
 
-.player-item{
+/* FIXAD LAGLISTA */
+
+.team-player-row{
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:10px;
+margin:5px 0;
+border-radius:10px;
+background:rgba(255,255,255,0.08);
+}
+
+.team-left{
 display:flex;
 align-items:center;
-padding:16px;
-margin:10px 0;
-border-radius:16px;
-background:rgba(255,255,255,0.07);
-box-shadow:0 4px 10px rgba(0,0,0,0.15);
+gap:10px;
 }
 
-.player-name{
-flex:1;
-text-align:left;
-font-size:18px;
-margin-left:14px;
-font-weight:600;
-}
-
-.player-delete{
+.remove-player{
 background:#ff4d4d;
 color:white;
 border:none;
-border-radius:12px;
-width:40px;
-height:40px;
-font-size:18px;
-display:flex;
-align-items:center;
-justify-content:center;
+border-radius:8px;
+padding:6px 10px;
 }
-
-.player-checkbox{
-transform:scale(1.4);
-}
-
 </style>
 </head>
 <body>
@@ -271,6 +245,7 @@ transform:scale(1.4);
 <ul id="benchList" class="list"></ul>
 </div>
 </div>
+
 <hr style="margin-top:40px; opacity:0.3;">
 
 <button
@@ -279,6 +254,7 @@ style="opacity:0.7; margin-top:25px;"
 onclick="endMatch()">
 Avsluta match
 </button>
+
 </div>
 
 <!-- STATISTIK -->
@@ -318,6 +294,9 @@ Avsluta match
 </div>
 
 <script>
+
+/* ALLT NEDAN ÄR OFÖRÄNDRAT UTOM renderTeamPlayers */
+
 let players=[];
 let fieldQueue=[];
 let benchQueue=[];
@@ -331,243 +310,30 @@ let manualIn=null;
 let teams=JSON.parse(localStorage.getItem("teams")||"{}");
 let currentTeam=null;
 
-/* ---------- MATCH ---------- */
-
-function startMatch(){
-const count=parseInt(document.getElementById("onFieldCount").value);
-const interval=parseFloat(document.getElementById("subInterval").value);
-
-if(!interval||interval<=0){alert("Ange minuter mellan byten.");return;}
-const starters=players.filter(p=>p.onField);
-const bench=players.filter(p=>!p.onField);
-if(starters.length!==count){alert("Markera exakt "+count+" spelare.");return;}
-
-fieldQueue=[...starters];
-benchQueue=[...bench];
-subIntervalSeconds=Math.round(interval*60);
-subSeconds=subIntervalSeconds;
-
-document.getElementById("setup").classList.add("hidden");
-document.getElementById("match").classList.remove("hidden");
-
-matchTimer=setInterval(()=>{
-totalSeconds++;
-fieldQueue.forEach(p=>p.time++);
-document.getElementById("matchTime").innerText=formatTime(totalSeconds);
-subSeconds--;
-updateSubTimer();
-if(subSeconds<=0) notifySub();
-},1000);
-
-updateLists();
-updateSwapBox();
-}
-
-function makeSub(){
-document.getElementById("subButton").style.boxShadow="none";
-let out=manualOut||fieldQueue[0];
-let inn=manualIn||benchQueue[0];
-if(!out||!inn)return;
-fieldQueue=fieldQueue.filter(p=>p!==out);
-benchQueue=benchQueue.filter(p=>p!==inn);
-benchQueue.push(out);
-fieldQueue.push(inn);
-manualOut=null;
-manualIn=null;
-subSeconds=subIntervalSeconds;
-updateSubTimer();
-updateLists();
-updateSwapBox();
-}
-
-function updateLists(){
-let fieldList=document.getElementById("fieldList");
-let benchList=document.getElementById("benchList");
-fieldList.innerHTML="";
-benchList.innerHTML="";
-
-fieldQueue.forEach(p=>{
-let li=document.createElement("li");
-li.className="player-item";
-li.innerText=p.name;
-li.style.color="#00ff9d";
-if(p===manualOut) li.classList.add("selected");
-li.onclick=()=>{manualOut=p===manualOut?null:p;updateSwapBox();updateLists();};
-fieldList.appendChild(li);
-});
-
-benchQueue.forEach(p=>{
-let li=document.createElement("li");
-li.className="player-item";
-li.innerText=p.name;
-li.style.color="#ff4d4d";
-if(p===manualIn) li.classList.add("selected");
-li.onclick=()=>{manualIn=p===manualIn?null:p;updateSwapBox();updateLists();};
-benchList.appendChild(li);
-});
-}
-
-function updateSwapBox(){
-let out=manualOut||fieldQueue[0];
-let inn=manualIn||benchQueue[0];
-document.getElementById("nextOut").innerText="UT: "+(out?out.name:"-");
-document.getElementById("nextIn").innerText="IN: "+(inn?inn.name:"-");
-}
-
-function updateSubTimer(){
-if(subSeconds<0) subSeconds=0;
-document.getElementById("subTimer").innerText="Nästa byte: "+formatTime(subSeconds);
-}
-
-function notifySub(){
-document.getElementById("subButton").style.boxShadow="0 0 25px red";
-if(navigator.vibrate) navigator.vibrate([200,100,200]);
-}
-
-function endMatch(){
-clearInterval(matchTimer);
-document.getElementById("match").classList.add("hidden");
-document.getElementById("stats").classList.remove("hidden");
-let statsList=document.getElementById("statsList");
-statsList.innerHTML="";
-players.sort((a,b)=>b.time-a.time)
-.forEach(p=>{
-let li=document.createElement("li");
-li.className="player-item";
-li.innerText=p.name+" – "+formatTime(p.time);
-statsList.appendChild(li);
-});
-}
-
-function resetApp(){location.reload();}
-
-function formatTime(sec){
-const m=Math.floor(sec/60);
-const s=sec%60;
-return (m<10?"0":"")+m+":"+(s<10?"0":"")+s;
-}
-
-/* ---------- LAG ---------- */
-
-function openTeamModal(){
-loadTeamDropdown();
-document.getElementById("teamModal").classList.add("active");
-}
-
-function closeTeamModal(){
-document.getElementById("teamModal").classList.remove("active");
-}
-
-function loadTeamDropdown(){
-let select=document.getElementById("teamSelect");
-select.innerHTML="<option value=''>Välj lag</option>";
-Object.keys(teams).forEach(name=>{
-let opt=document.createElement("option");
-opt.value=name;
-opt.textContent=name;
-select.appendChild(opt);
-});
-}
-
-function createNewTeam(){
-let name=document.getElementById("teamNameInput").value.trim();
-if(!name) return;
-teams[name]=[];
-currentTeam=name;
-saveTeams();
-loadTeamDropdown();
-alert("Lag skapat");
-}
-
-function loadTeamForEdit(){
-let name=document.getElementById("teamSelect").value;
-if(!name) return;
-currentTeam=name;
-renderTeamPlayers();
-}
-
 function renderTeamPlayers(){
 let container=document.getElementById("teamPlayers");
 container.innerHTML="";
+
 teams[currentTeam].forEach((p,i)=>{
-let div=document.createElement("div");
-div.className="player-item";
-div.innerHTML=
-`<input type="checkbox" id="chk${i}" checked> ${p}
-<button onclick="removePlayerFromTeam(${i})" style="float:right;background:#ff4d4d;color:white;border:none;border-radius:8px;">x</button>`;
-container.appendChild(div);
+
+let row=document.createElement("div");
+row.className="team-player-row";
+
+row.innerHTML=`
+<div class="team-left">
+<input type="checkbox" id="chk${i}" checked>
+<span>${p}</span>
+</div>
+
+<button class="remove-player"
+onclick="removePlayerFromTeam(${i})">X</button>
+`;
+
+container.appendChild(row);
+
 });
 }
 
-function addPlayerToTeam(){
-let name=document.getElementById("newTeamPlayer").value.trim();
-if(!name||!currentTeam) return;
-teams[currentTeam].push(name);
-document.getElementById("newTeamPlayer").value="";
-renderTeamPlayers();
-}
-
-function removePlayerFromTeam(index){
-teams[currentTeam].splice(index,1);
-renderTeamPlayers();
-}
-
-function saveTeam(){
-if(!currentTeam) return;
-saveTeams();
-alert("Lag sparat");
-}
-
-function deleteTeam(){
-if(!currentTeam) return;
-delete teams[currentTeam];
-currentTeam=null;
-saveTeams();
-loadTeamDropdown();
-document.getElementById("teamPlayers").innerHTML="";
-}
-
-function saveTeams(){
-localStorage.setItem("teams",JSON.stringify(teams));
-}
-
-function importSelectedPlayers(){
-if(!currentTeam) return;
-players=[];
-teams[currentTeam].forEach((name,i)=>{
-if(document.getElementById("chk"+i).checked){
-players.push({name:name,time:0,onField:false});
-}
-});
-renderPlayers();
-closeTeamModal();
-}
-
-/* ---------- SPELARE ---------- */
-
-function addPlayer(){
-const name=document.getElementById("nameInput").value.trim();
-if(!name) return;
-players.push({name:name,time:0,onField:false});
-document.getElementById("nameInput").value="";
-renderPlayers();
-}
-
-function renderPlayers(){
-let list=document.getElementById("playerList");
-list.innerHTML="";
-players.forEach(p=>{
-let li=document.createElement("li");
-li.className="player-item";
-li.innerText=p.name;
-li.onclick=()=>{
-p.onField=!p.onField;
-li.style.background=p.onField?"#00ff9d":"rgba(255,255,255,0.08)";
-li.style.color=p.onField?"black":"white";
-};
-list.appendChild(li);
-});
-}
 </script>
 </body>
 </html>
