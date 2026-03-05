@@ -136,16 +136,13 @@ padding:0;
 }
 
 .player-item{
-padding:12px;
-margin:6px 0;
+padding:10px;
+margin:5px 0;
 border-radius:10px;
 background:rgba(255,255,255,0.08);
-display:flex;
-align-items:center;
-justify-content:space-between;
-gap:10px;
-font-size:16px;
+cursor:pointer;
 }
+
 .selected{
 outline:3px solid yellow;
 }
@@ -170,6 +167,43 @@ max-width:400px;
 max-height:90vh;
 overflow:auto;
 }
+/* ===== Snygg laglista ===== */
+
+.player-item{
+display:flex;
+align-items:center;
+padding:16px;
+margin:10px 0;
+border-radius:16px;
+background:rgba(255,255,255,0.07);
+box-shadow:0 4px 10px rgba(0,0,0,0.15);
+}
+
+.player-name{
+flex:1;
+text-align:left;
+font-size:18px;
+margin-left:14px;
+font-weight:600;
+}
+
+.player-delete{
+background:#ff4d4d;
+color:white;
+border:none;
+border-radius:12px;
+width:40px;
+height:40px;
+font-size:18px;
+display:flex;
+align-items:center;
+justify-content:center;
+}
+
+.player-checkbox{
+transform:scale(1.4);
+}
+
 </style>
 </head>
 <body>
@@ -443,18 +477,10 @@ container.innerHTML="";
 teams[currentTeam].forEach((p,i)=>{
 let div=document.createElement("div");
 div.className="player-item";
-div.innerHTML = `
-<input type="checkbox" id="chk${i}" checked style="transform:scale(1.3);">
-
-<span style="flex:1;text-align:left;">
-${p}
-</span>
-
-<button onclick="removePlayerFromTeam(${i})"
-style="background:#ff4d4d;color:white;border:none;border-radius:8px;padding:4px 10px;">
-X
-</button>
-`;container.appendChild(div);
+div.innerHTML=
+`<input type="checkbox" id="chk${i}" checked> ${p}
+<button onclick="removePlayerFromTeam(${i})" style="float:right;background:#ff4d4d;color:white;border:none;border-radius:8px;">x</button>`;
+container.appendChild(div);
 });
 }
 
