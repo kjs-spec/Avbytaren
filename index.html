@@ -275,12 +275,12 @@ let subIntervalSeconds=0;
 let matchTimer=null;
 let manualOut=null;
 let manualIn=null;
+if ("Notification" in window) {
+Notification.requestPermission();
+}
 
 let teams=JSON.parse(localStorage.getItem("teams")||"{}");
 let currentTeam=null;
-if ("Notification" in window) {
-Notification.requestPermission();
-
 
 /* ---------- MATCH ---------- */
 
@@ -387,6 +387,9 @@ icon:"https://cdn-icons-png.flaticon.com/512/861/861512.png"
 });
 
 }
+
+}
+
 function endMatch(){
 clearInterval(matchTimer);
 document.getElementById("match").classList.add("hidden");
